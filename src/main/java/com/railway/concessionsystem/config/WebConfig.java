@@ -1,34 +1,44 @@
 package com.railway.concessionsystem.config;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.config.annotation.*;
 
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
+    @Autowired
+    private SessionInterceptor sessionInterceptor;
+
     // ==========================
-    // CORS CONFIG (UNCHANGED)
+    // CORS CONFIG
     // ==========================
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
-                .allowedOrigins("http://localhost:3000") // React dev server
+                .allowedOrigins("http://localhost:3000")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true);
     }
 
     // ==========================
-    // STATIC FILE SERVING (NEW)
+    // INTERCEPTOR (ADD THIS)
+    // ==========================
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(sessionInterceptor)
+                .addPathPatterns("/api/**")
+                .excludePathPatterns("/api/auth/**");
+    }
+
+    // ==========================
+    // FILE UPLOAD SERVING
     // ==========================
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-
-        // Serve uploaded caste certificates
         registry.addResourceHandler("/uploads/**")
                 .addResourceLocations("file:uploads/")
-                .setCachePeriod(3600); // cache for 1 hour (optional)
+                .setCachePeriod(3600);
     }
 }
