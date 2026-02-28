@@ -5,12 +5,13 @@ import com.railway.concessionsystem.model.Staff;
 import com.railway.concessionsystem.repository.ApplicationRepository;
 import com.railway.concessionsystem.repository.StaffRepository;
 
+import jakarta.servlet.http.HttpSession;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.StringWriter;
-import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -28,12 +29,25 @@ public class ReportController {
     // Generate CSV report (DEPARTMENT FILTERED)
     // ==========================
     @GetMapping("/applications/csv")
-    public ResponseEntity<String> generateApplicationsCSV(Principal principal) {
+    public ResponseEntity<String> generateApplicationsCSV(HttpSession session) {
+
+        if (session.getAttribute("userRole") == null) {
+            return ResponseEntity.status(401).body("Login required");
+        }
+
 
         // 1️⃣ Logged-in staff
-        String email = principal.getName();
+        String email = (String) session.getAttribute("staffEmail");
+        String department = (String) session.getAttribute("staffDepartment");
+        String role = (String) session.getAttribute("userRole");
+
+        if (email == null || !"staff".equals(role)) {
+           return ResponseEntity.status(401).body("Unauthorized access");
+        }
+
         Staff staff = staffRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Staff not found"));
+
 
         // 2️⃣ Allowed departments mapping
         List<String> allowedDepartments;
