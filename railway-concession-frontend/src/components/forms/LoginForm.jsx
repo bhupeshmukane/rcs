@@ -45,9 +45,12 @@ const LoginForm = () => {
     setSuccess('');
 
     try {
-      const response = await authService.studentLogin(studentForm.studentId, studentForm.dob);
-      login(response.student, 'student');
-      setSuccess('Login successful! Redirecting...');
+      const response = await authService.requestStudentOtp(studentForm.studentId, studentForm.dob);
+      
+      setSuccess('Otp Sent to your registered email...');
+      setTimeout(() => {
+        window.location.href = `/verify-otp?studentId=${studentForm.studentId}`;
+}, 1000);
     } catch (err) {
       setError(err.message);
     } finally {

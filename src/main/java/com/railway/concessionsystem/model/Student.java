@@ -14,7 +14,7 @@ import java.util.List;
 public class Student {
     
     @Id
-    @Column(name = "id")
+    @Column(length = 20)
     private String id; // College ID (e.g., TU4F2222016)
     
     @NotNull
@@ -27,6 +27,28 @@ public class Student {
     @NotNull
     @Column(unique = true)
     private String email;
+
+    @Column(name = "is_active")
+    private Boolean isActive = true;
+
+    @Column(name = "is_drop_year")
+    private Boolean isDropYear = false;
+
+    public Boolean getIsActive() {
+    return isActive;
+}
+
+public void setIsActive(Boolean isActive) {
+    this.isActive = isActive;
+}
+
+public Boolean getIsDropYear() {
+    return isDropYear;
+}
+
+public void setIsDropYear(Boolean isDropYear) {
+    this.isDropYear = isDropYear;
+}
     
     private String password; // Hashed password (null initially)
     

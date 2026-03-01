@@ -2,7 +2,6 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import authService from '../services/authService';
 
 const AuthContext = createContext();
-
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
@@ -11,27 +10,29 @@ export const AuthProvider = ({ children }) => {
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // 🔐 On app load → check session from backend
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    const storedRole = localStorage.getItem('role');
+    const checkSession = async () => {
+      try {
+        const response = await authService.getCurrentUser();
+        setUser(response.user);
+        setRole(response.role);
+      } catch {
+        setUser(null);
+        setRole(null);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    if (storedUser && storedRole) {
-      setUser(JSON.parse(storedUser));
-      setRole(storedRole);
-    }
-
-    setLoading(false);
+    checkSession();
   }, []);
 
   const login = (userData, userRole) => {
     setUser(userData);
     setRole(userRole);
-
-    localStorage.setItem('user', JSON.stringify(userData));
-    localStorage.setItem('role', userRole);
   };
 
-  // 🔴 FIXED LOGOUT
   const logout = async () => {
     await authService.logout();
     setUser(null);
@@ -47,7 +48,8 @@ export const AuthProvider = ({ children }) => {
         logout,
         isAuthenticated: !!user,
         isStudent: role === 'student',
-        isStaff: role === 'staff'
+        isStaff: role === 'staff',
+        loading
       }}
     >
       {!loading && children}

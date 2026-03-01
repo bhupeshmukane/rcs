@@ -1,123 +1,194 @@
 import api from './api';
 
-export const applicationService = {
-  // Get all applications
+const applicationService = {
+
+  // ===============================
+  // STAFF: Get All Applications
+  // ===============================
   getAllApplications: async () => {
     try {
-      const response = await api.get('/applications/staff/applications',{withCredentials: true});
+      const response = await api.get(
+        '/applications/staff/applications',
+        { withCredentials: true }
+      );
       return response.data;
     } catch (error) {
-      throw new Error(error.response?.data?.error || 'Failed to fetch applications');
+      throw new Error(
+        error.response?.data?.error || 'Failed to fetch applications'
+      );
     }
   },
 
-  // Get application by ID
+  // ===============================
+  // Get Application By ID
+  // ===============================
   getApplicationById: async (id) => {
     try {
       const response = await api.get(`/applications/${id}`);
       return response.data;
     } catch (error) {
-      throw new Error(error.response?.data?.error || 'Failed to fetch application');
+      throw new Error(
+        error.response?.data?.error || 'Failed to fetch application'
+      );
     }
   },
 
-  // Get application with student data
+  // ===============================
+  // Get Application With Student
+  // ===============================
   getApplicationWithStudent: async (id) => {
     try {
       const response = await api.get(`/applications/${id}/with-student`);
       return response.data;
     } catch (error) {
-      throw new Error(error.response?.data?.error || 'Failed to fetch application with student');
+      throw new Error(
+        error.response?.data?.error ||
+        'Failed to fetch application with student'
+      );
     }
   },
 
-  // Create new application
-  // Create new application (UPDATED for file upload)
-createApplication: async (applicationData) => {
-  try {
-    const response = await api.post(
-      '/applications',
-      applicationData,
-      {
-        headers: {
-          // IMPORTANT: multipart support
-          'Content-Type': 'multipart/form-data'
-        }
-      }
-    );
-    return response.data;
-  } catch (error) {
-    throw new Error(
-      error.response?.data?.error || 'Failed to create application'
-    );
-  }
-},
-
-
-  // Get caste certificate// Get caste certificate path (STAFF)
-getCasteCertificate: async (applicationId) => {
-  try {
-    const response = await api.get(
-      `/applications/${applicationId}/caste-certificate`
-    );
-    return response.data;
-  } catch (error) {
-    throw new Error(
-      error.response?.data?.error || 'Failed to fetch caste certificate'
-    );
-  }
-},
-
-
-
-  // Update application status
-   updateApplicationStatus: async (id, status) => {
+  // ===============================
+  // Create New Application (Multipart)
+  // ===============================
+  createApplication: async (formData) => {
     try {
-      const response = await api.put(`/applications/${id}/status`, { status });
+      const response = await api.post(
+        '/applications',
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
       return response.data;
     } catch (error) {
-      throw new Error(error.response?.data?.error || 'Failed to update application status');
+      throw new Error(
+        error.response?.data?.error || 'Failed to create application'
+      );
     }
   },
 
-  // Assign certificate number
+  // ===============================
+  // STAFF: Update Application Status
+  // ===============================
+  updateApplicationStatus: async (id, status) => {
+    try {
+      const response = await api.put(
+        `/applications/${id}/status`,
+        { status }
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.error ||
+        'Failed to update application status'
+      );
+    }
+  },
+
+  // ===============================
+  // STAFF: Assign Certificate Number
+  // ===============================
   assignCertificateNumber: async (id, certificateNo) => {
     try {
-      const response = await api.put(`/applications/${id}/certificate`, { certificateNo });
+      const response = await api.put(
+        `/applications/${id}/certificate`,
+        { certificateNo }
+      );
       return response.data;
     } catch (error) {
-      throw new Error(error.response?.data?.error || 'Failed to assign certificate number');
+      throw new Error(
+        error.response?.data?.error ||
+        'Failed to assign certificate number'
+      );
     }
   },
-  // Get applications by student ID
+
+  // ===============================
+  // STUDENT: Get Applications By Student ID
+  // ===============================
   getApplicationsByStudentId: async (studentId) => {
     try {
-      const response = await api.get(`/applications/student/${studentId}`);
+      const response = await api.get(
+        `/applications/student/${studentId}`
+      );
       return response.data;
     } catch (error) {
-      throw new Error(error.response?.data?.error || 'Failed to fetch student applications');
+      throw new Error(
+        error.response?.data?.error ||
+        'Failed to fetch student applications'
+      );
     }
   },
 
-  // Get applications by status
+  // ===============================
+  // Get Applications By Status
+  // ===============================
   getApplicationsByStatus: async (status) => {
     try {
-      const response = await api.get(`/applications/status/${status}`);
+      const response = await api.get(
+        `/applications/status/${status}`
+      );
       return response.data;
     } catch (error) {
-      throw new Error(error.response?.data?.error || 'Failed to fetch applications by status');
+      throw new Error(
+        error.response?.data?.error ||
+        'Failed to fetch applications by status'
+      );
     }
   },
 
-  // Get application statistics
+  // ===============================
+  // Get Application Statistics
+  // ===============================
   getApplicationStats: async () => {
     try {
       const response = await api.get('/applications/stats');
       return response.data;
     } catch (error) {
-      throw new Error(error.response?.data?.error || 'Failed to fetch application statistics');
+      throw new Error(
+        error.response?.data?.error ||
+        'Failed to fetch application statistics'
+      );
+    }
+  },
+
+  // ===============================
+  // Get Application Validity
+  // ===============================
+  getApplicationValidity: async (appId) => {
+    try {
+      const response = await api.get(
+        `/applications/${appId}/validity`
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.error ||
+        'Failed to fetch application validity'
+      );
+    }
+  },
+
+  // ===============================
+  // STAFF: Get Caste Certificate Path
+  // ===============================
+  getCasteCertificate: async (applicationId) => {
+    try {
+      const response = await api.get(
+        `/applications/${applicationId}/caste-certificate`
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.error ||
+        'Failed to fetch caste certificate'
+      );
     }
   }
+
 };
 
 export default applicationService;

@@ -13,6 +13,7 @@ import StudentsPage from './pages/staff/StudentsPage';
 import ReportsPage from './pages/staff/ReportsPage';
 import NotFound from './pages/shared/NotFound';
 import Unauthorized from './pages/shared/Unauthorized';
+import VerifyOtp from './components/auth/VerifyOtp';
 import './styles/global.css';
 
 // Layout wrapper for student routes
@@ -26,6 +27,8 @@ const StudentLayout = ({ children }) => {
     </div>
   );
 };
+
+<Route path="/verify-otp" element={<VerifyOtp />} />
 
 // Layout wrapper for staff routes
 const StaffLayout = ({ children }) => {

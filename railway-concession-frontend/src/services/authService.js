@@ -1,40 +1,69 @@
 import api from './api';
 
-export const authService = {
+const authService = {
 
-  studentLogin: async (studentId, dob) => {
-    const response = await api.post('/auth/student/login', { studentId, dob });
+  // =========================
+  // STUDENT - Request OTP
+  // =========================
+  requestStudentOtp: async (studentId, dob) => {
+    const response = await api.post(
+      '/auth/student/request-otp',
+      { studentId, dob },
+      { withCredentials: true }
+    );
+
     return response.data;
   },
 
+  // =========================
+  // STUDENT - Verify OTP
+  // =========================
+  verifyStudentOtp: async (studentId, otp) => {
+    const response = await api.post(
+      '/auth/student/verify-otp',
+      { studentId, otp },
+      { withCredentials: true }
+    );
+
+    return response.data;
+  },
+
+  // =========================
+  // STAFF LOGIN
+  // =========================
   staffLogin: async (email, password) => {
-    const response = await api.post('/auth/staff/login', { email, password });
+    const response = await api.post(
+      '/auth/staff/login',
+      { email, password },
+      { withCredentials: true }
+    );
+
     return response.data;
   },
 
-  studentRegister: async (studentData) => {
-    const response = await api.post('/auth/student/register', studentData);
+  // =========================
+  // GET CURRENT SESSION USER
+  // =========================
+  getCurrentUser: async () => {
+    const response = await api.get(
+      '/auth/me',
+      { withCredentials: true }
+    );
+
     return response.data;
   },
 
-  // 🔴 FIXED LOGOUT (CALL BACKEND)
+  // =========================
+  // LOGOUT
+  // =========================
   logout: async () => {
-    try {
-      await api.post('/auth/logout', {}, { withCredentials: true });
-    } catch (e) {
-      console.log("Logout API error", e);
-    }
+    await api.post(
+      '/auth/logout',
+      {},
+      { withCredentials: true }
+    );
+  }
 
-    localStorage.removeItem('user');
-    localStorage.removeItem('role');
-  },
-
-  getCurrentUser: () => {
-    const user = localStorage.getItem('user');
-    return user ? JSON.parse(user) : null;
-  },
-
-  getCurrentRole: () => localStorage.getItem('role')
 };
 
 export default authService;
