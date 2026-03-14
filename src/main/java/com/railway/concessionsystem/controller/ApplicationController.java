@@ -2,27 +2,30 @@ package com.railway.concessionsystem.controller;
 
 import com.railway.concessionsystem.model.Application;
 import com.railway.concessionsystem.model.ApplicationStatus;
+import com.railway.concessionsystem.model.CertificateHistory;
 import com.railway.concessionsystem.model.Staff;
 import com.railway.concessionsystem.service.ApplicationService;
 import com.railway.concessionsystem.repository.ApplicationRepository;
 import com.railway.concessionsystem.repository.StaffRepository;
+import com.railway.concessionsystem.repository.CertificateHistoryRepository;
 
 import jakarta.servlet.http.HttpSession;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @RestController
 @RequestMapping("/api/applications")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173"}, allowCredentials = "true")
 public class ApplicationController {
 
     @Autowired
@@ -33,6 +36,9 @@ public class ApplicationController {
 
     @Autowired
     private StaffRepository staffRepository;
+
+    @Autowired
+    private CertificateHistoryRepository certificateHistoryRepository;
 
     // ==========================
     // CREATE APPLICATION
@@ -46,9 +52,11 @@ public class ApplicationController {
             @RequestParam String routeTo,
             @RequestParam String category,
             @RequestParam String concessionType,
-            @RequestParam(required = false) String previousCertificateNo,
+            @RequestParam String previousCertificateNo,
             @RequestParam(required = false) MultipartFile casteCertificate,
-            @RequestParam MultipartFile aadharCard
+            @RequestParam MultipartFile aadharCard,
+            @RequestParam(required = false) MultipartFile otherDocument,
+            @RequestParam MultipartFile previousPass
     ) {
         try {
 
@@ -65,7 +73,9 @@ public class ApplicationController {
                     concessionType,
                     previousCertificateNo,
                     casteCertificate,
-                    aadharCard
+                    aadharCard,
+                    otherDocument,
+                    previousPass
             );
 
             return ResponseEntity.ok(saved);
@@ -83,6 +93,58 @@ public class ApplicationController {
     public ResponseEntity<Application> getApplicationById(@PathVariable Long id) {
         return applicationRepository.findById(id)
                 .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // ==============================
+    // Staff: View caste certificate
+    // ==============================
+    @GetMapping("/{id}/caste-certificate")
+    public ResponseEntity<?> getCasteCertificate(@PathVariable Long id) {
+        return applicationRepository.findById(id)
+                .map(application -> {
+                    // Check category
+                    String category = application.getCategory();
+                    if (category == null ||
+                            !(category.equalsIgnoreCase("SC") || category.equalsIgnoreCase("ST"))) {
+                        return ResponseEntity.badRequest()
+                                .body(Map.of("error", "Caste certificate not applicable for this category"));
+                    }
+
+                    // Check certificate path
+                    String certificatePath = application.getCasteCertificate();
+                    if (certificatePath == null || certificatePath.isBlank()) {
+                        return ResponseEntity.badRequest()
+                                .body(Map.of("error", "Caste certificate not uploaded"));
+                    }
+
+                    // Return file URL
+                    return ResponseEntity.ok(
+                            Map.of("certificateUrl", certificatePath)
+                    );
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // ==============================
+    // Staff: View Aadhaar card
+    // ==============================
+    @GetMapping("/{id}/aadhar-card")
+    public ResponseEntity<?> getAadharCard(@PathVariable Long id) {
+        return applicationRepository.findById(id)
+                .map(application -> {
+                    // Check Aadhaar path
+                    String aadharPath = application.getAadharCard();
+                    if (aadharPath == null || aadharPath.isBlank()) {
+                        return ResponseEntity.badRequest()
+                                .body(Map.of("error", "Aadhaar card not uploaded"));
+                    }
+
+                    // Return file URL
+                    return ResponseEntity.ok(
+                            Map.of("aadharUrl", aadharPath)
+                    );
+                })
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -160,19 +222,48 @@ public class ApplicationController {
     // STATS
     // ==========================
     @GetMapping("/stats")
-    public Map<String, Long> getStats() {
-        return Map.of(
-                "total", applicationRepository.count(),
-                "pending", applicationRepository.countByStatus(ApplicationStatus.PENDING),
-                "approved", applicationRepository.countByStatus(ApplicationStatus.APPROVED),
-                "rejected", applicationRepository.countByStatus(ApplicationStatus.REJECTED)
+    public ResponseEntity<?> getStats(HttpSession session) {
+        String staffEmail = (String) session.getAttribute("staffEmail");
+
+        if (staffEmail == null) {
+            return ResponseEntity.status(401)
+                    .body(Map.of("error", "Not authenticated"));
+        }
+
+        Staff staff = staffRepository.findByEmail(staffEmail)
+                .orElseThrow(() -> new RuntimeException("Staff not found"));
+
+        List<Application> applications =
+                applicationService.getApplicationsForMultipleDepartments(List.of(staff.getDepartment()));
+
+        long pending = applications.stream()
+                .filter(app -> app.getStatus() == ApplicationStatus.PENDING)
+                .count();
+        long approved = applications.stream()
+                .filter(app -> app.getStatus() == ApplicationStatus.APPROVED)
+                .count();
+        long issued = applications.stream()
+                .filter(app -> app.getStatus() == ApplicationStatus.ISSUED)
+                .count();
+        long rejected = applications.stream()
+                .filter(app -> app.getStatus() == ApplicationStatus.REJECTED)
+                .count();
+
+        return ResponseEntity.ok(
+                Map.of(
+                        "total", (long) applications.size(),
+                        "pending", pending,
+                        "approved", approved,
+                        "issued", issued,
+                        "rejected", rejected
+                )
         );
     }
 
     // ==========================
     // STAFF DEPARTMENT FILTER
     // ==========================
-    @GetMapping("/staff/applications")
+    @GetMapping("/staff")
     public ResponseEntity<?> getApplicationsForStaff(HttpSession session) {
 
         try {
@@ -187,15 +278,7 @@ public class ApplicationController {
             Staff staff = staffRepository.findByEmail(staffEmail)
                     .orElseThrow(() -> new RuntimeException("Staff not found"));
 
-            List<String> allowedDepartments;
-
-            if ("IT".equalsIgnoreCase(staff.getDepartment())) {
-                allowedDepartments = List.of("FEIT", "SEIT", "TEIT", "BEIT");
-            } else if ("MECH".equalsIgnoreCase(staff.getDepartment())) {
-                allowedDepartments = List.of("FEMECH", "SEMECH", "TEMECH", "BEMECH");
-            } else {
-                allowedDepartments = List.of(staff.getDepartment());
-            }
+            List<String> allowedDepartments = List.of(staff.getDepartment());
 
             List<Application> applications =
                     applicationService.getApplicationsForMultipleDepartments(allowedDepartments);
@@ -240,11 +323,22 @@ public ResponseEntity<?> getApplicationValidity(@PathVariable Long id) {
     // ==========================
     // CSV REPORT
     // ==========================
-    @GetMapping("staff/reports/applications/csv")
-    public ResponseEntity<String> generateCSV() {
+    @GetMapping("/staff/reports/applications/csv")
+    public ResponseEntity<String> generateCSV(HttpSession session) {
+
+        String staffEmail = (String) session.getAttribute("staffEmail");
+        if (staffEmail == null) {
+            return ResponseEntity.status(401)
+                    .body("Not authenticated");
+        }
+
+        Staff staff = staffRepository.findByEmail(staffEmail)
+                .orElseThrow(() -> new RuntimeException("Staff not found"));
+
+        List<String> allowedDepartments = List.of(staff.getDepartment());
 
         List<Application> applications =
-                applicationRepository.findAll();
+                applicationService.getApplicationsForMultipleDepartments(allowedDepartments);
 
         StringWriter csv = new StringWriter();
 
@@ -267,4 +361,19 @@ public ResponseEntity<?> getApplicationValidity(@PathVariable Long id) {
                         "attachment; filename=applications.csv")
                 .body(csv.toString());
     }
+
+    @GetMapping("/student/{studentID}/certificate-history")
+    public List<CertificateHistory> getCertificateHistory(
+        @PathVariable String studentID) {
+        return certificateHistoryRepository
+        .findByApplication_Student_IdOrderByIssueDateDesc(studentID);
+    }
+
+    @GetMapping("/student/{studentID}/previous-passes")
+    public List<Application> getPreviousPasses(
+        @PathVariable String studentID) {
+        return applicationRepository
+        .findByStudent_IdAndConcessionType(studentID, "PASS");
+    }   
+    
 }

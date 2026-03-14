@@ -4,17 +4,17 @@ import { useAuth } from '../../contexts/AuthContext';
 import applicationService from '../../services/applicationService';
 import ErrorMessage from '../../components/common/ErrorMessage';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
-import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 
+
 const StudentDashboard = () => {
+
   const { user } = useAuth();
 
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const [hasPending, setHasPending] = useState(false);
   const [activeConcession, setActiveConcession] = useState(null);
   const [remainingDays, setRemainingDays] = useState(null);
   const [eligibilityMessage, setEligibilityMessage] = useState('');
@@ -23,8 +23,16 @@ const StudentDashboard = () => {
     fetchStudentData();
   }, []);
 
+  useEffect(() => {
+    if (remainingDays !== null && remainingDays <= 3 && remainingDays >= 0) {
+      alert(`Warning: Your concession expires in ${remainingDays} days`);
+    }
+  }, [remainingDays]);
+
   const fetchStudentData = async () => {
+
     try {
+
       setLoading(true);
 
       const apps =
@@ -32,191 +40,262 @@ const StudentDashboard = () => {
 
       setApplications(apps);
 
-      // 🔹 Check Pending
-      const pending = apps.find(app => app.status === 'PENDING');
-      if (pending) {
-        setHasPending(true);
-        setEligibilityMessage('You already have a pending application.');
-      }
-
-      // 🔹 Check Active Approved
-      const approved = apps.find(app => app.status === 'APPROVED');
-
-      if (approved && approved.validUntil) {
-
-        const today = new Date();
-        const validUntil = new Date(approved.validUntil);
-
-        const diffTime = validUntil - today;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-        if (diffDays > 0) {
-          setActiveConcession(approved);
-          setRemainingDays(diffDays);
-          setEligibilityMessage(
-            `Concession active until ${validUntil.toLocaleDateString()}`
-          );
-        }
-      }
+      evaluateEligibility(apps);
 
     } catch (err) {
+
       setError(err.message);
+
     } finally {
+
       setLoading(false);
+
     }
+
   };
 
-  const canApply = !hasPending && !activeConcession;
+  const evaluateEligibility = (apps) => {
+
+    const pending = apps.find(app => app.status === 'PENDING');
+
+    if (pending) {
+
+      setEligibilityMessage(
+        'You already have a pending application under review.'
+      );
+
+      return;
+
+    }
+
+    const active = apps.find(app =>
+      (app.status === 'ISSUED' || app.status === 'APPROVED') &&
+      app.validUntil
+    );
+
+    if (active) {
+
+      const today = new Date();
+      const validUntil = new Date(active.validUntil);
+
+      const diffTime = validUntil - today;
+
+      const diffDays =
+        Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      if (diffDays > 0) {
+
+        setActiveConcession(active);
+
+        setRemainingDays(diffDays);
+
+        setEligibilityMessage(
+          `Concession valid until ${validUntil.toLocaleDateString()}`
+        );
+
+        return;
+
+      }
+
+    }
+
+    setEligibilityMessage('');
+
+  };
+
+  const canApply = !eligibilityMessage;
 
   const getStatusBadge = (status) => {
-    const statusClasses = {
+
+    const styles = {
+
       PENDING: 'bg-yellow-100 text-yellow-800',
       APPROVED: 'bg-green-100 text-green-800',
-      REJECTED: 'bg-red-100 text-red-800'
+      ISSUED: 'bg-green-200 text-green-900',
+      REJECTED: 'bg-red-100 text-red-800',
+      EXPIRED: 'bg-gray-200 text-gray-600'
+
     };
 
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusClasses[status]}`}>
+
+      <span
+        className={`px-2 py-1 rounded-full text-xs font-medium ${styles[status]}`}
+      >
+
         {status}
+
       </span>
+
     );
+
   };
 
-  if (loading) return <LoadingSpinner text="Loading dashboard..." />;
-  if (error) return <ErrorMessage message={error} />;
+  const resolveDisplayStatus = (application) => {
+    if (application.currentCertificateNo && application.status !== 'REJECTED') {
+      return 'ISSUED';
+    }
+
+    return application.status;
+  };
+
+  const getCountdownColor = (days) => {
+
+    if (days <= 2)
+      return "text-red-600";
+
+    if (days <= 7)
+      return "text-yellow-600";
+
+    return "text-green-600";
+
+  };
+
+  if (loading)
+    return <LoadingSpinner text="Loading dashboard..." />;
+
+  if (error)
+    return <ErrorMessage message={error} />;
 
   return (
-    <div className="space-y-6">
-
-      {/* Welcome */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-6 text-white">
-        <h1 className="text-2xl font-bold mb-2">
-          Welcome back, {user.name}!
-        </h1>
-        <p className="text-blue-100">
-          Manage your railway concession here.
-        </p>
-      </div>
-
-      {/* Eligibility Message */}
-      {eligibilityMessage && (
-        <div className="bg-red-100 text-red-800 p-4 rounded-md text-sm font-medium">
-          {eligibilityMessage}
-        </div>
-      )}
-
-      {/* Active Concession */}
-      {activeConcession && (
-        <Card title="Active Concession" subtitle="Currently valid concession">
-          <div className="space-y-2 text-sm text-gray-700">
-            <p>
-              <strong>Type:</strong> {activeConcession.concessionType}
-            </p>
-            <p>
-              <strong>Route:</strong> {activeConcession.routeFrom} → {activeConcession.routeTo}
-            </p>
-            <p>
-              <strong>Valid Until:</strong> {new Date(activeConcession.validUntil).toLocaleDateString()}
-            </p>
-            <p className="text-green-600 font-medium">
-              Remaining Days: {remainingDays}
-            </p>
-            <p>
-              <strong>Certificate No:</strong> {activeConcession.currentCertificateNo || 'Not assigned'}
-            </p>
-          </div>
-        </Card>
-      )}
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-        <Card title="New Application" subtitle="Apply for railway concession">
-          <p className="text-gray-600 mb-4">
-            Create a new concession application for your travel needs.
-          </p>
-
-          {canApply ? (
-            <Link to="/student/applications?new=true">
-              <Button className="w-full bg-blue-600 hover:bg-blue-700">
-                Apply Now
+    <div className="space-y-8">
+        <section className="relative overflow-hidden rounded-3xl border border-slate-200/60 bg-gradient-to-r from-slate-900 via-blue-900 to-teal-700 p-6 text-white shadow-xl md:p-8">
+          <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/20 blur-2xl" />
+          <div className="relative z-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-sm uppercase tracking-[0.2em] text-sky-100">Student Portal</p>
+              <h1 className="mt-2 text-3xl font-black tracking-tight md:text-4xl">
+                Welcome back, {user.name}
+              </h1>
+              <p className="mt-2 max-w-xl text-sm text-sky-100 md:text-base">
+                Track your concession status, remaining validity, and application history in one place.
+              </p>
+            </div>
+            <Link to="/student/applications" className="inline-flex">
+              <Button variant="light" className="w-full px-5 py-2.5 md:w-auto">
+                Open Applications
               </Button>
             </Link>
-          ) : (
-            <Button disabled className="w-full bg-gray-400 cursor-not-allowed">
-              Not Eligible to Apply
-            </Button>
-          )}
-        </Card>
-
-        <Card title="My Applications" subtitle="View your application status">
-          <p className="text-gray-600 mb-4">
-            Check your previous concession records.
-          </p>
-          <Link to="/student/applications">
-            <Button variant="outline" className="w-full">
-              View Applications
-            </Button>
-          </Link>
-        </Card>
-      </div>
-
-      {/* Applications Table */}
-      <Card title="Recent Applications" subtitle="Your recent applications">
-        {applications.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 text-sm">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-2 text-left">ID</th>
-                  <th className="px-4 py-2 text-left">Route</th>
-                  <th className="px-4 py-2">Type</th>
-                  <th className="px-4 py-2">Date</th>
-                  <th className="px-4 py-2">Status</th>
-                  <th className="px-4 py-2">Valid Until</th>
-                  <th className="px-4 py-2">Rejection Reason</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {applications.slice(0, 5).map((app) => (
-                  <tr key={app.appId}>
-                    <td className="px-4 py-2">#{app.appId}</td>
-                    <td className="px-4 py-2">
-                      {app.routeFrom} → {app.routeTo}
-                    </td>
-                    <td className="px-4 py-2">
-                      {app.concessionType || 'MONTHLY'}
-                    </td>
-                    <td className="px-4 py-2">
-                      {new Date(app.applicationDate).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-2">
-                      {getStatusBadge(app.status)}
-                    </td>
-                    <td className="px-4 py-2">
-                      {app.validUntil
-                        ? new Date(app.validUntil).toLocaleDateString()
-                        : '-'}
-                    </td>
-                    <td className="px-4 py-2 text-red-600">
-                      {app.status === 'REJECTED'
-                        ? app.rejectionReason || 'No reason provided'
-                        : '-'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
-        ) : (
-          <div className="text-center py-10 text-gray-500">
-            No applications yet.
+        </section>
+
+        <section className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-6">
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Total Applications</p>
+            <p className="mt-3 text-3xl font-black text-amber-500">{applications.length}</p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Active Concession</p>
+            <p className="mt-3 text-3xl font-black text-emerald-600">{activeConcession ? 'Yes' : 'No'}</p>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Remaining Days</p>
+            <p className={`mt-3 text-3xl font-black ${remainingDays !== null ? getCountdownColor(remainingDays) : 'text-slate-700'}`}>
+              {remainingDays ?? '-'}
+            </p>
+          </div>
+        </section>
+
+        {eligibilityMessage && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm font-medium text-amber-800 shadow-sm">
+            {eligibilityMessage}
           </div>
         )}
-      </Card>
 
-    </div>
+        {activeConcession && (
+          <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="text-lg font-bold text-slate-900">Active Concession</h2>
+            <div className="mt-4 grid grid-cols-1 gap-3 text-sm text-slate-700 md:grid-cols-3">
+              <p><span className="font-semibold text-slate-900">Route:</span> {activeConcession.routeFrom} {'->'} {activeConcession.routeTo}</p>
+              <p><span className="font-semibold text-slate-900">Valid Until:</span> {new Date(activeConcession.validUntil).toLocaleDateString()}</p>
+              <p><span className="font-semibold text-slate-900">Certificate No:</span> {activeConcession.currentCertificateNo || 'Will be assigned by office'}</p>
+            </div>
+          </section>
+        )}
+
+        <section className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h3 className="text-lg font-bold text-slate-900">New Application</h3>
+            <p className="mt-2 text-sm text-slate-600">
+              Apply for a new railway concession with updated route and category details.
+            </p>
+            <div className="mt-5">
+              {canApply ? (
+                <Link to="/student/applications?new=true">
+                  <Button className="w-full bg-slate-900 text-white hover:bg-slate-700">Apply Now</Button>
+                </Link>
+              ) : (
+                <Button disabled className="w-full cursor-not-allowed bg-slate-300 text-slate-600">
+                  Not Eligible to Apply
+                </Button>
+              )}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h3 className="text-lg font-bold text-slate-900">My Applications</h3>
+            <p className="mt-2 text-sm text-slate-600">
+              Review current and previous submissions, including status and validity.
+            </p>
+            <div className="mt-5">
+              <Link to="/student/applications">
+                <Button variant="outline" className="w-full border-slate-400 text-slate-700 hover:bg-slate-100">
+                  View Applications
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+          <div className="mb-4 flex items-center justify-between">
+            <h3 className="text-lg font-bold text-slate-900">Recent Applications</h3>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-slate-600">
+              Last 5 records
+            </span>
+          </div>
+
+          {applications.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+                    <th className="px-3 py-3">ID</th>
+                    <th className="px-3 py-3">Route</th>
+                    <th className="px-3 py-3">Type</th>
+                    <th className="px-3 py-3">Date</th>
+                    <th className="px-3 py-3">Status</th>
+                    <th className="px-3 py-3">Valid Until</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {applications.slice(0, 5).map((app) => (
+                    <tr key={app.appId} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
+                      <td className="px-3 py-3 font-medium text-slate-800">#{app.appId}</td>
+                      <td className="px-3 py-3 text-slate-700">{app.routeFrom} {'->'} {app.routeTo}</td>
+                      <td className="px-3 py-3 text-slate-700">{app.concessionType}</td>
+                      <td className="px-3 py-3 text-slate-700">{new Date(app.applicationDate).toLocaleDateString()}</td>
+                      <td className="px-3 py-3">{getStatusBadge(resolveDisplayStatus(app))}</td>
+                      <td className="px-3 py-3 text-slate-700">
+                        {app.validUntil ? new Date(app.validUntil).toLocaleDateString() : '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-slate-300 py-10 text-center text-sm text-slate-500">
+              No applications submitted yet.
+            </div>
+          )}
+        </section>
+      </div>
+
   );
+
 };
 
 export default StudentDashboard;

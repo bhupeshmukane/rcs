@@ -13,4 +13,5 @@ public interface StudentRepository extends JpaRepository<Student, String> {
     boolean existsByEmail(String email);
     Optional<Student> findByIdAndDob(String id, LocalDate dob);
     List<Student> findByNameContainingOrEmailContaining(String name, String email);
+    List<Student> findByDepartmentAndYear(String department, String year);
 }

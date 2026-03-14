@@ -11,15 +11,24 @@ public class StudentOtp {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "student_id", nullable = false)
     private String studentId;
 
+    @Column(name = "otp_code", nullable = false)
     private String otpCode;
 
+    @Column(name = "expiry_time", nullable = false)
     private LocalDateTime expiryTime;
 
-    private Boolean verified = false;
+    @Column(nullable = false)
+    private boolean verified;
 
-    // ===== GETTERS & SETTERS =====
+    @Column(name = "created_at")
+    private LocalDateTime createdAt;
+
+    // =========================
+    // GETTERS & SETTERS
+    // =========================
 
     public Long getId() {
         return id;
@@ -49,11 +58,19 @@ public class StudentOtp {
         this.expiryTime = expiryTime;
     }
 
-    public Boolean getVerified() {
+    public boolean getVerified() {
         return verified;
     }
 
-    public void setVerified(Boolean verified) {
+    public void setVerified(boolean verified) {
         this.verified = verified;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
     }
 }

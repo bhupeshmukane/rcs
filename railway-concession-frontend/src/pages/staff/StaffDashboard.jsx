@@ -8,6 +8,7 @@ import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 
 const StaffDashboard = () => {
+
   const [stats, setStats] = useState({});
   const [recentApplications, setRecentApplications] = useState([]);
   const [studentCount, setStudentCount] = useState(0);
@@ -19,208 +20,190 @@ const StaffDashboard = () => {
   }, []);
 
   const fetchDashboardData = async () => {
-    try {
-      setLoading(true);
-      const [appsData, statsData, studentsData] = await Promise.all([
-        applicationService.getAllApplications(),
-        applicationService.getApplicationStats(),
-        studentService.getAllStudents()
-      ]);
 
-      setRecentApplications(appsData.slice(0, 5));
+    try {
+
+      setLoading(true);
+
+      const [appsData, statsData, studentsData] =
+        await Promise.all([
+          applicationService.getAllApplications(),
+          applicationService.getApplicationStats(),
+          studentService.getAllStudents()
+        ]);
+
+      setRecentApplications(appsData.slice(0,5));
+
       setStats(statsData);
+
       setStudentCount(studentsData.length);
+
     } catch (err) {
+
       setError(err.message);
+
     } finally {
+
       setLoading(false);
+
     }
+
   };
 
+  const printForm = (id) => {
+  window.open(`http://localhost:8080/api/print/${id}`, "_blank");
+};
+
+  const printBatch = (ids) => {
+  fetch("http://localhost:8080/api/print/batch", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(ids)
+  })
+  .then(res => res.blob())
+  .then(blob => {
+    const url = window.URL.createObjectURL(blob);
+    window.open(url);
+  });
+};
+
   const getStatusBadge = (status) => {
+
     const statusClasses = {
+
       PENDING: 'bg-yellow-100 text-yellow-800',
+
       APPROVED: 'bg-green-100 text-green-800',
-      REJECTED: 'bg-red-100 text-red-800'
+
+      ISSUED: 'bg-green-200 text-green-900',
+
+      REJECTED: 'bg-red-100 text-red-800',
+
+      EXPIRED: 'bg-gray-200 text-gray-600'
+
     };
 
     return (
+
       <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusClasses[status]}`}>
+
         {status}
+
       </span>
+
     );
+
   };
 
-  const getTodaysApplicationsCount = () => {
-    const today = new Date().toDateString();
-    return recentApplications.filter(app => 
-      new Date(app.applicationDate).toDateString() === today
-    ).length;
-  };
+  if (loading)
+    return <LoadingSpinner text="Loading dashboard..." />;
 
-  if (loading) return <LoadingSpinner text="Loading dashboard..." />;
-  if (error) return <ErrorMessage message={error} />;
+  if (error)
+    return <ErrorMessage message={error} />;
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-purple-600 to-indigo-600 rounded-lg p-6 text-white">
-        <h1 className="text-2xl font-bold mb-2">Staff Dashboard</h1>
-        <p className="text-purple-100">Manage concession applications and student records</p>
-      </div>
 
-      {/* Quick Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card className="text-center p-6 bg-white">
-          <div className="text-3xl font-bold text-blue-600 mb-2">{stats.total || 0}</div>
-          <div className="text-gray-600">Total Applications</div>
-        </Card>
-        
-        <Card className="text-center p-6 bg-white">
-          <div className="text-3xl font-bold text-yellow-600 mb-2">{stats.pending || 0}</div>
-          <div className="text-gray-600">Pending Review</div>
-        </Card>
-        
-        <Card className="text-center p-6 bg-white">
-          <div className="text-3xl font-bold text-green-600 mb-2">{stats.approved || 0}</div>
-          <div className="text-gray-600">Approved</div>
-        </Card>
-        
-        <Card className="text-center p-6 bg-white">
-          <div className="text-3xl font-bold text-red-600 mb-2">{stats.rejected || 0}</div>
-          <div className="text-gray-600">Rejected</div>
-        </Card>
-      </div>
+    <div className="space-y-8">
+      <section className="relative overflow-hidden rounded-3xl border border-slate-200/60 bg-gradient-to-r from-slate-950 via-blue-950 to-teal-800 p-6 text-white shadow-xl md:p-8">
+        <div className="pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full bg-white/20 blur-2xl" />
+        <div className="relative z-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-sky-100">Staff Console</p>
+            <h1 className="mt-2 text-3xl font-black tracking-tight md:text-4xl">Staff Dashboard</h1>
+            <p className="mt-2 max-w-2xl text-sm text-sky-100 md:text-base">
+              Review concession requests, monitor student records, and keep approvals moving.
+            </p>
+          </div>
+          <div className="rounded-xl bg-white/15 px-4 py-3 text-sm backdrop-blur">
+            Active Students: <span className="font-bold">{studentCount}</span>
+          </div>
+        </div>
+      </section>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Quick Actions */}
-        <Card title="Quick Actions" className="h-fit">
-          <div className="space-y-4">
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-4 md:gap-6">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Total Applications</p>
+          <p className="mt-3 text-3xl font-black text-amber-500">{stats.total || 0}</p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Pending</p>
+          <p className="mt-3 text-3xl font-black text-amber-600">{stats.pending || 0}</p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Approved</p>
+          <p className="mt-3 text-3xl font-black text-emerald-600">{stats.approved || 0}</p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Issued</p>
+          <p className="mt-3 text-3xl font-black text-cyan-700">{stats.issued || 0}</p>
+        </div>
+      </section>
+
+      <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Card title="Quick Actions" className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="space-y-3">
             <Link to="/staff/applications">
-              <Button className="w-full justify-start bg-blue-600 hover:bg-blue-700 text-white">
-                📝 Process Applications
+              <Button className="w-full bg-slate-900 text-white hover:bg-slate-700">
+                Process Applications
               </Button>
             </Link>
-            
             <Link to="/staff/students">
-              <Button className="w-full justify-start bg-green-600 hover:bg-green-700 text-white">
-                👥 Manage Students
-              </Button>
-            </Link>
-            
-            <Link to="/staff/reports">
-              <Button className="w-full justify-start bg-purple-600 hover:bg-purple-700 text-white">
-                📊 Generate Reports
+              <Button variant="outline" className="w-full border-slate-400 text-slate-700 hover:bg-slate-100">
+                Manage Students
               </Button>
             </Link>
           </div>
         </Card>
 
-        {/* System Status */}
-        <Card title="System Status" className="h-fit">
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600">Applications Processed Today</span>
-              <span className="font-bold text-blue-600">{getTodaysApplicationsCount()}</span>
+        <Card title="Students Snapshot" className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="grid grid-cols-2 gap-4 text-center">
+            <div className="rounded-xl border border-sky-100 bg-sky-50 p-4">
+              <p className="text-2xl font-black text-amber-500">{studentCount}</p>
+              <p className="text-sm text-slate-600">Registered Students</p>
             </div>
-            
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600">Total Students</span>
-              <span className="font-bold text-green-600">{studentCount}</span>
-            </div>
-            
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600">System Uptime</span>
-              <span className="font-bold text-purple-600">99.9%</span>
+            <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4">
+              <p className="text-2xl font-black text-emerald-700">{stats.issued || 0}</p>
+              <p className="text-sm text-slate-600">Concessions Issued</p>
             </div>
           </div>
         </Card>
-      </div>
+      </section>
 
-      {/* Recent Applications */}
-      <Card title="Recent Applications" subtitle="Latest concession applications submitted">
+      <Card title="Recent Applications" className="rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Student</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Route</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+          <table className="min-w-full text-left text-sm">
+            <thead>
+              <tr className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500">
+                <th className="px-3 py-3">ID</th>
+                <th className="px-3 py-3">Student</th>
+                <th className="px-3 py-3">Route</th>
+                <th className="px-3 py-3">Date</th>
+                <th className="px-3 py-3">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
-              {recentApplications.map((application) => (
-                <tr key={application.appId}>
-                  <td className="px-4 py-2 text-sm font-medium text-gray-900">#{application.appId}</td>
-                  <td className="px-4 py-2 text-sm text-gray-900">
-                    {application.student?.name || 'N/A'}
-                    <br />
-                    <span className="text-xs text-gray-500">{application.student?.id}</span>
+            <tbody>
+              {recentApplications.map(app => (
+                <tr key={app.appId} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
+                  <td className="px-3 py-3 font-medium text-slate-800">#{app.appId}</td>
+                  <td className="px-3 py-3">
+                    <p className="font-medium text-slate-800">{app.student?.name}</p>
+                    <p className="text-xs text-slate-500">{app.student?.id}</p>
                   </td>
-                  <td className="px-4 py-2 text-sm text-gray-900">
-                    {application.routeFrom} → {application.routeTo}
-                  </td>
-                  <td className="px-4 py-2 text-sm text-gray-900">
-                    {new Date(application.applicationDate).toLocaleDateString()}
-                  </td>
-                  <td className="px-4 py-2">
-                    {getStatusBadge(application.status)}
-                  </td>
+                  <td className="px-3 py-3 text-slate-700">{app.routeFrom} {'->'} {app.routeTo}</td>
+                  <td className="px-3 py-3 text-slate-700">{new Date(app.applicationDate).toLocaleDateString()}</td>
+                  <td className="px-3 py-3">{getStatusBadge(app.status)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-
-        {recentApplications.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            No applications found.
-          </div>
-        )}
-
-        {recentApplications.length > 0 && (
-          <div className="mt-4 text-center">
-            <Link to="/staff/applications">
-              <Button variant="outline">
-                View All Applications
-              </Button>
-            </Link>
-          </div>
-        )}
-      </Card>
-
-      {/* Recent Activity Feed */}
-      <Card title="Recent Activity" subtitle="Latest system activities">
-        <div className="space-y-3">
-          <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-            <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-            <div className="flex-1">
-              <p className="text-sm font-medium">New application submitted</p>
-              <p className="text-xs text-gray-500">2 minutes ago</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-            <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-            <div className="flex-1">
-              <p className="text-sm font-medium">Application approved</p>
-              <p className="text-xs text-gray-500">15 minutes ago</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
-            <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
-            <div className="flex-1">
-              <p className="text-sm font-medium">Student profile updated</p>
-              <p className="text-xs text-gray-500">1 hour ago</p>
-            </div>
-          </div>
-        </div>
       </Card>
     </div>
+
   );
+
 };
 
 export default StaffDashboard;

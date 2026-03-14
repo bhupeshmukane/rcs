@@ -10,20 +10,19 @@ const Card = ({
 }) => {
   return (
     <div 
-      className={`bg-white rounded-lg shadow-md border border-gray-200 ${className}`}
+      className={`rounded-2xl border border-slate-200 bg-white shadow-sm ${className}`}
       {...props}
     >
-      {/* Header section */}
       {(title || subtitle || actions) && (
-        <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
           <div>
             {title && (
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-lg font-bold text-slate-900">
                 {title}
               </h3>
             )}
             {subtitle && (
-              <p className="text-sm text-gray-600 mt-1">
+              <p className="mt-1 text-sm text-slate-600">
                 {subtitle}
               </p>
             )}
@@ -35,8 +34,7 @@ const Card = ({
           )}
         </div>
       )}
-      
-      {/* Content section */}
+
       <div className="p-6">
         {children}
       </div>

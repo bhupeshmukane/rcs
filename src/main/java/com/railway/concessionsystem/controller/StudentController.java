@@ -2,90 +2,148 @@ package com.railway.concessionsystem.controller;
 
 import com.railway.concessionsystem.model.Student;
 import com.railway.concessionsystem.repository.StudentRepository;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import com.railway.concessionsystem.service.AuditService;
+import java.util.Map;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/students")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173"}, allowCredentials = "true")
 public class StudentController {
-    
+
     @Autowired
     private StudentRepository studentRepository;
-    
-    // Get all students (for staff only)
+
+    @Autowired
+    private AuditService auditService;
+
+    // ==============================
+    // GET ALL STUDENTS
+    // ==============================
     @GetMapping
     public List<Student> getAllStudents() {
         return studentRepository.findAll();
     }
-    
-    // Get student by ID
+
+    // ==============================
+    // GET STUDENT BY ID
+    // ==============================
     @GetMapping("/{id}")
     public ResponseEntity<Student> getStudentById(@PathVariable String id) {
-        Optional<Student> student = studentRepository.findById(id);
-        return student.map(ResponseEntity::ok)
-                     .orElse(ResponseEntity.notFound().build());
+        return studentRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
-    
-    // Get student with applications by ID
-    @GetMapping("/{id}/with-applications")
-    public ResponseEntity<Student> getStudentWithApplications(@PathVariable String id) {
-        Optional<Student> student = studentRepository.findById(id);
-        if (student.isPresent()) {
-            // Force initialization of applications (if needed)
-            Student s = student.get();
-            if (s.getApplications() != null) {
-                s.getApplications().size(); // This forces Hibernate to load the collection
-            }
-            return ResponseEntity.ok(s);
-        }
-        return ResponseEntity.notFound().build();
-    }
-    
-    // Update student profile
+
+    // ==============================
+    // UPDATE STUDENT
+    // ==============================
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateStudent(@PathVariable String id, @RequestBody Student studentDetails) {
-        Optional<Student> studentOptional = studentRepository.findById(id);
-        
-        if (studentOptional.isPresent()) {
-            Student student = studentOptional.get();
-            
-            // Update fields
-            if (studentDetails.getName() != null) {
-                student.setName(studentDetails.getName());
-            }
-            if (studentDetails.getEmail() != null) {
-                student.setEmail(studentDetails.getEmail());
-            }
-            if (studentDetails.getCategory() != null) {
-                student.setCategory(studentDetails.getCategory());
-            }
-            
-            Student updatedStudent = studentRepository.save(student);
-            return ResponseEntity.ok(updatedStudent);
-        }
-        
-        return ResponseEntity.notFound().build();
+    public ResponseEntity<?> updateStudent(
+            @PathVariable String id,
+            @RequestBody Student updatedData) {
+
+        Student student = studentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Student not found"));
+
+        if (updatedData.getName() != null)
+            student.setName(updatedData.getName());
+
+        if (updatedData.getEmail() != null)
+            student.setEmail(updatedData.getEmail());
+
+        if (updatedData.getCategory() != null)
+            student.setCategory(updatedData.getCategory());
+
+        studentRepository.save(student);
+
+        return ResponseEntity.ok(student);
     }
-    
-    // Delete student (admin only)
+
+    // ==============================
+    // TOGGLE ACTIVE STATUS
+    // ==============================
+    @PutMapping("/{id}/toggle-active")
+public ResponseEntity<?> toggleActive(@PathVariable String id) {
+
+    Student student = studentRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Student not found"));
+
+    boolean newStatus = !student.getIsActive();
+    student.setIsActive(newStatus);
+    studentRepository.save(student);
+
+    auditService.log(
+            "STUDENT_STATUS_TOGGLED",
+            "STAFF",
+            "STUDENT",
+            id,
+            "Active status changed to " + newStatus
+    );
+
+    return ResponseEntity.ok("Student status updated");
+}
+
+    // ==============================
+    // TOGGLE DROP YEAR
+    // ==============================
+    @PutMapping("/{id}/toggle-drop-year")
+    public ResponseEntity<?> toggleDropYear(@PathVariable String id) {
+
+        Student student = studentRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Student not found"));
+
+        student.setIsDropYear(!student.getIsDropYear());
+        studentRepository.save(student);
+
+        return ResponseEntity.ok("Drop year updated");
+    }
+
+    // ==============================
+    // DELETE SINGLE STUDENT
+    // ==============================
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteStudent(@PathVariable String id) {
-        if (studentRepository.existsById(id)) {
-            studentRepository.deleteById(id);
-            return ResponseEntity.ok().body(Map.of("message", "Student deleted successfully"));
-        }
+public ResponseEntity<?> deleteStudent(@PathVariable String id) {
+
+    if (!studentRepository.existsById(id)) {
         return ResponseEntity.notFound().build();
     }
+
+    studentRepository.deleteById(id);
+
     
-    // Search students by name or email
-    @GetMapping("/search")
-    public List<Student> searchStudents(@RequestParam String query) {
-        return studentRepository.findByNameContainingOrEmailContaining(query, query);
-    }
+
+    return ResponseEntity.ok("Student deleted");
+}
+    // ==============================
+    // BULK DELETE
+    // ==============================
+    @DeleteMapping("/bulk-delete")
+public ResponseEntity<?> bulkDelete(@RequestBody List<String> ids) {
+
+    studentRepository.deleteAllById(ids);
+
+    
+
+    return ResponseEntity.ok("Students deleted");
+}
+
+@DeleteMapping("/delete-by-year")
+public ResponseEntity<?> deleteStudentsByYear(@RequestBody Map<String, Object> request) {
+
+    String department = (String) request.get("department");
+    String year = (String) request.get("year");
+
+    List<Student> students = studentRepository.findByDepartmentAndYear(department, year);
+     
+    studentRepository.deleteAll(students);
+    return ResponseEntity.ok(
+        students.size() + " students from " + department + " year " + year 
+    );
+}
 }

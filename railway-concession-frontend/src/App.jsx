@@ -2,7 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
-import Header from './components/layout/Header';
+import DashboardLayout from './components/layout/DashboardLayout';
 import LoginPage from './pages/auth/LoginPage';
 import StudentDashboard from './pages/student/StudentDashboard';
 import ApplicationHistory from './pages/student/ApplicationHistory';
@@ -14,31 +14,25 @@ import ReportsPage from './pages/staff/ReportsPage';
 import NotFound from './pages/shared/NotFound';
 import Unauthorized from './pages/shared/Unauthorized';
 import VerifyOtp from './components/auth/VerifyOtp';
-import './styles/global.css';
+import AuditLogsPage from './pages/staff/AuditLogsPage';
 
 // Layout wrapper for student routes
 const StudentLayout = ({ children }) => {
   return (
-    <div className="min-h-screen bg-gray-100">
-      <Header />
-      <main className="p-4">
-        {children}
-      </main>
-    </div>
+    <DashboardLayout>
+      {children}
+    </DashboardLayout>
   );
 };
 
-<Route path="/verify-otp" element={<VerifyOtp />} />
+
 
 // Layout wrapper for staff routes
 const StaffLayout = ({ children }) => {
   return (
-    <div className="min-h-screen bg-gray-100">
-      <Header />
-      <main className="p-6">
-        {children}
-      </main>
-    </div>
+    <DashboardLayout>
+      {children}
+    </DashboardLayout>
   );
 };
 
@@ -59,7 +53,9 @@ function App() {
         <div className="App">
           <Routes>
             {/* Public routes */}
+            <Route path="/" element={<Navigate to="/login" />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/verify-otp" element={<VerifyOtp />} />
             <Route path="/unauthorized" element={<Unauthorized />} />
             
             {/* Student routes */}
@@ -114,9 +110,15 @@ function App() {
                 </StaffLayout>
               </ProtectedRoute>
             } />
-            
+            <Route path="/staff/audit" element={
+              <ProtectedRoute allowedRoles={['staff']}>
+                <StaffLayout>
+                  <AuditLogsPage />
+                </StaffLayout>
+              </ProtectedRoute>
+            } />
             {/* Default redirect */}
-            <Route path="/" element={<RoleBasedRedirect />} />
+            
             
             {/* Catch all route */}
             <Route path="*" element={<NotFound />} />

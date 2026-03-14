@@ -7,8 +7,9 @@ import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
 
 const ApplicationsPage = () => {
+
   const [stats, setStats] = useState({});
-  const [filter, setFilter] = useState('all');
+  const [filter, setFilter] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -18,141 +19,138 @@ const ApplicationsPage = () => {
   }, []);
 
   const fetchStats = async () => {
+
     try {
+
       setLoading(true);
-      const data = await applicationService.getApplicationStats();
+
+      const data =
+        await applicationService.getApplicationStats();
+
       setStats(data);
+
     } catch (err) {
+
       setError(err.message);
+
     } finally {
+
       setLoading(false);
+
     }
-  };
 
-  const handleFilterChange = (newFilter) => {
-    setFilter(newFilter);
-  };
-
-  const handleSearch = (e) => {
-    setSearchTerm(e.target.value);
   };
 
   const getFilterButtonClass = (filterName) => {
+
     return filter === filterName
-      ? 'bg-blue-600 text-white'
-      : 'bg-gray-200 text-gray-700 hover:bg-gray-300';
+      ? 'bg-slate-900 text-white'
+      : 'bg-slate-100 text-slate-700 hover:bg-slate-200';
+
   };
 
-  if (loading) return <LoadingSpinner text="Loading applications..." />;
-  if (error) return <ErrorMessage message={error} />;
+  if (loading)
+    return <LoadingSpinner text="Loading applications..." />;
+
+  if (error)
+    return <ErrorMessage message={error} />;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Applications Management</h1>
-          <p className="text-gray-600">Manage and review all concession applications</p>
+
+    <div className="space-y-8">
+      <section className="relative overflow-hidden rounded-3xl border border-slate-200/60 bg-gradient-to-r from-slate-950 via-blue-950 to-teal-800 p-6 text-white shadow-xl md:p-8">
+        <div className="pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full bg-white/20 blur-2xl" />
+        <div className="relative z-10">
+          <p className="text-sm uppercase tracking-[0.2em] text-sky-100">Staff Console</p>
+          <h1 className="mt-2 text-3xl font-black tracking-tight md:text-4xl">Applications Management</h1>
+          <p className="mt-2 max-w-2xl text-sm text-sky-100 md:text-base">
+            Review, approve, reject, and issue concessions with fast filtering and search.
+          </p>
         </div>
-        <Button onClick={fetchStats} variant="outline" className="mt-4 sm:mt-0">
-          ↻ Refresh Stats
-        </Button>
-      </div>
+      </section>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="text-center p-4 bg-gradient-to-r from-blue-500 to-blue-600 text-white">
-          <div className="text-2xl font-bold">{stats.total || 0}</div>
-          <div className="text-sm">Total Applications</div>
-        </Card>
-        
-        <Card className="text-center p-4 bg-gradient-to-r from-yellow-500 to-yellow-600 text-white">
-          <div className="text-2xl font-bold">{stats.pending || 0}</div>
-          <div className="text-sm">Pending</div>
-        </Card>
-        
-        <Card className="text-center p-4 bg-gradient-to-r from-green-500 to-green-600 text-white">
-          <div className="text-2xl font-bold">{stats.approved || 0}</div>
-          <div className="text-sm">Approved</div>
-        </Card>
-        
-        <Card className="text-center p-4 bg-gradient-to-r from-red-500 to-red-600 text-white">
-          <div className="text-2xl font-bold">{stats.rejected || 0}</div>
-          <div className="text-sm">Rejected</div>
-        </Card>
-      </div>
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-4 md:gap-6">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Total</p>
+          <p className="mt-3 text-3xl font-black text-amber-500">{stats.total || 0}</p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Pending</p>
+          <p className="mt-3 text-3xl font-black text-amber-600">{stats.pending || 0}</p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Approved</p>
+          <p className="mt-3 text-3xl font-black text-emerald-600">{stats.approved || 0}</p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Issued</p>
+          <p className="mt-3 text-3xl font-black text-cyan-700">{stats.issued || 0}</p>
+        </div>
+      </section>
 
-      {/* Filters and Search */}
-      <Card>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-          {/* Filter Buttons */}
+      <Card className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="mb-4 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <input
+            type="text"
+            placeholder="Search by student ID or name..."
+            className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200 md:w-80"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+
           <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => handleFilterChange('all')}
-              className={`px-4 py-2 rounded-md text-sm font-medium ${getFilterButtonClass('all')}`}
+
+            <Button
+              size="sm"
+              className={getFilterButtonClass('ALL')}
+              onClick={() => setFilter('ALL')}
             >
-              All Applications
-            </button>
-            <button
-              onClick={() => handleFilterChange('pending')}
-              className={`px-4 py-2 rounded-md text-sm font-medium ${getFilterButtonClass('pending')}`}
+              All
+            </Button>
+
+            <Button
+              size="sm"
+              className={getFilterButtonClass('PENDING')}
+              onClick={() => setFilter('PENDING')}
             >
               Pending
-            </button>
-            <button
-              onClick={() => handleFilterChange('approved')}
-              className={`px-4 py-2 rounded-md text-sm font-medium ${getFilterButtonClass('approved')}`}
+            </Button>
+
+            <Button
+              size="sm"
+              className={getFilterButtonClass('APPROVED')}
+              onClick={() => setFilter('APPROVED')}
             >
               Approved
-            </button>
-            <button
-              onClick={() => handleFilterChange('rejected')}
-              className={`px-4 py-2 rounded-md text-sm font-medium ${getFilterButtonClass('rejected')}`}
+            </Button>
+
+            <Button
+              size="sm"
+              className={getFilterButtonClass('ISSUED')}
+              onClick={() => setFilter('ISSUED')}
+            >
+              Issued
+            </Button>
+
+            <Button
+              size="sm"
+              className={getFilterButtonClass('REJECTED')}
+              onClick={() => setFilter('REJECTED')}
             >
               Rejected
-            </button>
-          </div>
-
-          {/* Search */}
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg className="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <input
-              type="text"
-              placeholder="Search applications..."
-              value={searchTerm}
-              onChange={handleSearch}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-        </div>
-      </Card>
-
-      {/* Applications Management Component */}
-      <ApplicationsManagement />
-
-      {/* Quick Actions Footer */}
-      <Card>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-          <div>
-            <h3 className="text-lg font-medium text-gray-900">Quick Export</h3>
-            <p className="text-sm text-gray-600">Download application data for reporting</p>
-          </div>
-          <div className="flex space-x-3">
-            <Button variant="outline" onClick={() => window.open('/api/reports/applications/csv', '_blank')}>
-              📄 Export CSV
-            </Button>
-            <Button variant="outline">
-              📊 Generate Report
             </Button>
           </div>
         </div>
+
+        <ApplicationsManagement
+          filter={filter}
+          searchTerm={searchTerm}
+        />
       </Card>
     </div>
+
   );
+
 };
 
 export default ApplicationsPage;

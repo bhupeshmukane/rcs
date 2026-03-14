@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+
 import java.time.LocalDate;
 import java.util.List;
 
@@ -12,21 +13,34 @@ import java.util.List;
 @Table(name = "student")
 @Data
 public class Student {
-    
+
     @Id
     @Column(length = 20)
-    private String id; // College ID (e.g., TU4F2222016)
-    
+    private String id; // College ID (example: TU4F2222016)
+
     @NotNull
+    @Column(nullable = false)
     private String name;
-    
-    @NotNull
+
+    @Column(name = "dob")
     private LocalDate dob;
-    
+
     @Email
     @NotNull
-    @Column(unique = true)
+    @Column(unique = true, nullable = false)
     private String email;
+
+    @Column(name = "gender")
+    private String gender;
+
+    @Column(name = "department", nullable = false)
+    private String department;
+
+    @Column(name = "year", nullable = false)
+    private String year;
+
+    @Column(name = "category")
+    private String category; // SC/ST/General
 
     @Column(name = "is_active")
     private Boolean isActive = true;
@@ -34,31 +48,20 @@ public class Student {
     @Column(name = "is_drop_year")
     private Boolean isDropYear = false;
 
-    public Boolean getIsActive() {
-    return isActive;
-}
+    // Optional fields useful for printing
+    @Column(name = "home_station")
+    private String homeStation;
 
-public void setIsActive(Boolean isActive) {
-    this.isActive = isActive;
-}
+    @Column(name = "college_station")
+    private String collegeStation;
 
-public Boolean getIsDropYear() {
-    return isDropYear;
-}
+    @Column(name = "phone")
+    private String phone;
 
-public void setIsDropYear(Boolean isDropYear) {
-    this.isDropYear = isDropYear;
-}
-    
-    private String password; // Hashed password (null initially)
-    
-    private String category; // SC/ST or null for general students
+    @Transient
+    private String password; // used only during login, not stored
 
-    @Column(nullable = false)
-    private String department;
-
-    
     @OneToMany(mappedBy = "student", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonManagedReference // Add this annotation
+    @JsonManagedReference
     private List<Application> applications;
 }

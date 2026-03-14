@@ -12,14 +12,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDate;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/auth")
-@CrossOrigin(origins = "http://localhost:3000", allowCredentials = "true")
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173"}, allowCredentials = "true")
 public class AuthController {
 
     @Autowired
@@ -38,31 +36,37 @@ public class AuthController {
     // 1️⃣ STUDENT REQUEST OTP (DOB VERIFIED FIRST)
     // =========================================================
     @PostMapping("/student/request-otp")
-    public ResponseEntity<?> requestOtp(@RequestBody Map<String, String> request) {
+public ResponseEntity<?> requestOtp(@RequestBody Map<String, String> request) {
 
-        String studentId = request.get("studentId");
-        String dobString = request.get("dob");
+    String studentId = request.get("studentId");
+    String dobString = request.get("dob");
 
-        try {
-            LocalDate dob = LocalDate.parse(dobString);
-
-            Student student = studentRepository.findById(studentId)
-                    .orElseThrow(() -> new RuntimeException("Student not found"));
-
-            if (!student.getDob().equals(dob)) {
-                return ResponseEntity.status(401)
-                        .body(Map.of("error", "Invalid DOB"));
-            }
-
-            otpService.generateAndSendOtp(studentId);
-
-            return ResponseEntity.ok(Map.of("message", "OTP sent successfully"));
-
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                    .body(Map.of("error", "Invalid request"));
-        }
+    if (studentId == null || dobString == null) {
+        return ResponseEntity.badRequest()
+                .body(Map.of("error", "Missing studentId or dob"));
     }
+
+    Optional<Student> optionalStudent = studentRepository.findById(studentId);
+
+    if (optionalStudent.isEmpty()) {
+        return ResponseEntity.badRequest()
+                .body(Map.of("error", "Student not found"));
+    }
+
+    Student student = optionalStudent.get();
+
+    // Convert DB date to string for safe comparison
+    String dbDob = student.getDob().toString();  // ALWAYS YYYY-MM-DD
+
+    if (!dbDob.equals(dobString)) {
+        return ResponseEntity.status(401)
+                .body(Map.of("error", "DOB does not match"));
+    }
+
+    otpService.generateAndSendOtp(studentId);
+
+    return ResponseEntity.ok(Map.of("message", "OTP sent successfully"));
+}
 
     // =========================================================
     // 2️⃣ STUDENT VERIFY OTP (FINAL LOGIN)

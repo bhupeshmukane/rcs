@@ -1,27 +1,27 @@
-import React, { useState } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
-import authService from '../../services/authService';
-import ErrorMessage from '../common/ErrorMessage';
-import SuccessMessage from '../common/SuccessMessage';
-import Button from '../ui/Button';
+import React, { useState } from "react";
+import { useAuth } from "../../contexts/AuthContext";
+import authService from "../../services/authService";
+import ErrorMessage from "../common/ErrorMessage";
+import SuccessMessage from "../common/SuccessMessage";
+import Button from "../ui/Button";
 
 const LoginForm = () => {
-  const [activeTab, setActiveTab] = useState('student');
+
+  const [activeTab, setActiveTab] = useState("student");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
   const { login } = useAuth();
 
-  // Student form state
   const [studentForm, setStudentForm] = useState({
-    studentId: '',
-    dob: ''
+    studentId: "",
+    dob: ""
   });
 
-  // Staff form state
   const [staffForm, setStaffForm] = useState({
-    email: '',
-    password: ''
+    email: "",
+    password: ""
   });
 
   const handleStudentChange = (e) => {
@@ -39,18 +39,26 @@ const LoginForm = () => {
   };
 
   const handleStudentSubmit = async (e) => {
+
     e.preventDefault();
     setLoading(true);
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     try {
-      const response = await authService.requestStudentOtp(studentForm.studentId, studentForm.dob);
-      
-      setSuccess('Otp Sent to your registered email...');
+
+      await authService.requestStudentOtp(
+        studentForm.studentId,
+        studentForm.dob
+      );
+
+      setSuccess("OTP sent to your registered email.");
+
       setTimeout(() => {
-        window.location.href = `/verify-otp?studentId=${studentForm.studentId}`;
-}, 1000);
+        window.location.href =
+          `/verify-otp?studentId=${studentForm.studentId}`;
+      }, 1200);
+
     } catch (err) {
       setError(err.message);
     } finally {
@@ -59,15 +67,24 @@ const LoginForm = () => {
   };
 
   const handleStaffSubmit = async (e) => {
+
     e.preventDefault();
     setLoading(true);
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     try {
-      const response = await authService.staffLogin(staffForm.email, staffForm.password);
-      login(response.staff, 'staff');
-      setSuccess('Login successful! Redirecting...');
+
+      const response =
+        await authService.staffLogin(
+          staffForm.email,
+          staffForm.password
+        );
+
+      login(response.staff, "staff");
+
+      setSuccess("Login successful! Redirecting...");
+
     } catch (err) {
       setError(err.message);
     } finally {
@@ -76,64 +93,68 @@ const LoginForm = () => {
   };
 
   return (
-    <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-6">
-      <div className="flex border-b mb-4">
+
+    <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="mb-6 grid grid-cols-2 rounded-xl bg-slate-100 p-1">
+
         <button
-          type="button"
-          className={`flex-1 py-2 px-4 font-medium text-center ${
-            activeTab === 'student'
-              ? 'text-blue-600 border-b-2 border-blue-600'
-              : 'text-gray-500 hover:text-gray-700'
+          onClick={() => setActiveTab("student")}
+          className={`rounded-lg py-2 text-sm font-semibold transition-colors ${
+            activeTab === "student"
+              ? 'bg-white text-sky-700 shadow-sm'
+              : 'text-slate-500 hover:text-slate-700'
           }`}
-          onClick={() => setActiveTab('student')}
         >
           Student Login
         </button>
+
         <button
-          type="button"
-          className={`flex-1 py-2 px-4 font-medium text-center ${
-            activeTab === 'staff'
-              ? 'text-blue-600 border-b-2 border-blue-600'
-              : 'text-gray-500 hover:text-gray-700'
+          onClick={() => setActiveTab("staff")}
+          className={`rounded-lg py-2 text-sm font-semibold transition-colors ${
+            activeTab === "staff"
+              ? 'bg-white text-emerald-700 shadow-sm'
+              : 'text-slate-500 hover:text-slate-700'
           }`}
-          onClick={() => setActiveTab('staff')}
         >
           Staff Login
         </button>
+
       </div>
 
       {error && <ErrorMessage message={error} />}
       {success && <SuccessMessage message={success} />}
 
-      {activeTab === 'student' ? (
+      {activeTab === "student" && (
+
         <form onSubmit={handleStudentSubmit} className="space-y-4">
+
           <div>
-            <label htmlFor="studentId" className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-slate-700">
               Student ID
             </label>
+
             <input
               type="text"
-              id="studentId"
               name="studentId"
               value={studentForm.studentId}
               onChange={handleStudentChange}
-              placeholder="e.g., TU4F2222016"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="TU4F2222016"
+              className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
               required
             />
           </div>
 
           <div>
-            <label htmlFor="dob" className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-slate-700">
               Date of Birth
             </label>
+
             <input
               type="date"
-              id="dob"
               name="dob"
               value={studentForm.dob}
               onChange={handleStudentChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
               required
             />
           </div>
@@ -141,45 +162,51 @@ const LoginForm = () => {
           <Button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md disabled:opacity-50"
+            className="w-full"
           >
-            {loading ? 'Signing in...' : 'Sign In as Student'}
+            {loading ? "Sending OTP..." : "Continue with OTP"}
           </Button>
 
-          <p className="text-sm text-gray-600 text-center mt-4">
-            Use your college ID and date of birth to login
+          <p className="text-center text-xs text-slate-500">
+            OTP will be sent to your registered email.
           </p>
+
         </form>
-      ) : (
+
+      )}
+
+      {activeTab === "staff" && (
+
         <form onSubmit={handleStaffSubmit} className="space-y-4">
+
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-slate-700">
               Email
             </label>
+
             <input
               type="email"
-              id="email"
               name="email"
               value={staffForm.email}
               onChange={handleStaffChange}
-              placeholder="Enter your email"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="staff@college.com"
+              className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
               required
             />
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-slate-700">
               Password
             </label>
+
             <input
               type="password"
-              id="password"
               name="password"
               value={staffForm.password}
               onChange={handleStaffChange}
-              placeholder="Enter your password"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="Enter password"
+              className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200"
               required
             />
           </div>
@@ -187,13 +214,17 @@ const LoginForm = () => {
           <Button
             type="submit"
             disabled={loading}
-            className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md disabled:opacity-50"
+            className="w-full bg-emerald-600 hover:bg-emerald-700"
           >
-            {loading ? 'Signing in...' : 'Sign In as Staff'}
+            {loading ? "Signing in..." : "Login as Staff"}
           </Button>
+
         </form>
+
       )}
+
     </div>
+
   );
 };
 

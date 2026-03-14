@@ -97,59 +97,82 @@ const ReportsPage = () => {
   if (error) return <ErrorMessage message={error} />;
 
   return (
-    <div className="space-y-6 p-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Reports & Analytics</h1>
-          <p className="text-gray-600">Generate reports and view system analytics</p>
+    <div className="space-y-8">
+      <section className="relative overflow-hidden rounded-3xl border border-slate-200/60 bg-gradient-to-r from-slate-950 via-blue-950 to-teal-800 p-6 text-white shadow-xl md:p-8">
+        <div className="pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full bg-white/20 blur-2xl" />
+        <div className="relative z-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-sky-100">Staff Console</p>
+            <h1 className="mt-2 text-3xl font-black tracking-tight md:text-4xl">Reports & Analytics</h1>
+            <p className="mt-2 max-w-2xl text-sm text-sky-100 md:text-base">
+              Export concession reports and preview certificate ranges before download.
+            </p>
+          </div>
+          <Button onClick={fetchReportData} variant="light" className="w-full px-5 py-2.5 md:w-auto">
+            Refresh Data
+          </Button>
         </div>
-        <Button onClick={fetchReportData} variant="outline" className="mt-4 sm:mt-0">
-          ↻ Refresh Data
-        </Button>
-      </div>
+      </section>
 
       {successMessage && <SuccessMessage message={successMessage} onDismiss={() => setSuccessMessage('')} />}
       {error && <ErrorMessage message={error} onDismiss={() => setError('')} />}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Report Generator */}
-        <Card title="Generate Reports" className="h-fit">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-4 md:gap-6">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Total Applications</p>
+          <p className="mt-3 text-3xl font-black text-amber-500">{applications.length}</p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Approved</p>
+          <p className="mt-3 text-3xl font-black text-emerald-600">{applications.filter(app => app.status === 'APPROVED').length}</p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Pending</p>
+          <p className="mt-3 text-3xl font-black text-amber-600">{applications.filter(app => app.status === 'PENDING').length}</p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Certificates Issued</p>
+          <p className="mt-3 text-3xl font-black text-cyan-700">{applications.filter(app => app.currentCertificateNo).length}</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Card title="Generate Reports" className="h-fit rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="mb-2 block text-sm font-medium text-slate-700">
                 Certificate Number Range
               </label>
-              <p className="text-sm text-gray-500 mb-3">
+              <p className="mb-3 text-sm text-slate-500">
                 Generate report for certificates within a specific range
               </p>
               
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">From Certificate</label>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">From Certificate</label>
                   <input
                     type="text"
                     name="start"
                     value={certificateRange.start}
                     onChange={handleCertificateRangeChange}
                     placeholder="e.g., CERT2024001"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">To Certificate</label>
+                  <label className="mb-2 block text-sm font-medium text-slate-700">To Certificate</label>
                   <input
                     type="text"
                     name="end"
                     value={certificateRange.end}
                     onChange={handleCertificateRangeChange}
                     placeholder="e.g., CERT2024050"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
                   />
                 </div>
               </div>
               
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="mt-2 text-xs text-slate-500">
                 Leave blank for all certificates. Range is inclusive.
               </p>
             </div>
@@ -157,13 +180,13 @@ const ReportsPage = () => {
             <div className="space-y-2">
               <Button 
                 onClick={handleGenerateReport}
-                className="w-full bg-blue-600 hover:bg-blue-700"
+                className="w-full bg-slate-900 text-white hover:bg-slate-700"
               >
-                📄 Export Applications CSV
+                Export Applications CSV
               </Button>
               
               <div className="text-center">
-                <span className="text-sm text-gray-500">
+                <span className="text-sm text-slate-500">
                   {certificateRange.start || certificateRange.end ? 
                     `Will export ${getApplicationsInCertificateRange().length} applications` : 
                     'Will export all applications'
@@ -174,31 +197,30 @@ const ReportsPage = () => {
           </div>
         </Card>
 
-        {/* Quick Stats */}
-        <Card title="Quick Statistics" className="h-fit">
+        <Card title="Quick Summary" className="h-fit rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">Total Applications</span>
-              <span className="font-bold text-blue-600">{applications.length}</span>
+              <span className="text-slate-600">Total Applications</span>
+              <span className="font-bold text-amber-500">{applications.length}</span>
             </div>
             
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">Approved Applications</span>
-              <span className="font-bold text-green-600">
+              <span className="text-slate-600">Approved Applications</span>
+              <span className="font-bold text-emerald-700">
                 {applications.filter(app => app.status === 'APPROVED').length}
               </span>
             </div>
             
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">Pending Applications</span>
-              <span className="font-bold text-yellow-600">
+              <span className="text-slate-600">Pending Applications</span>
+              <span className="font-bold text-amber-700">
                 {applications.filter(app => app.status === 'PENDING').length}
               </span>
             </div>
             
             <div className="flex justify-between items-center">
-              <span className="text-gray-600">Certificates Issued</span>
-              <span className="font-bold text-purple-600">
+              <span className="text-slate-600">Certificates Issued</span>
+              <span className="font-bold text-cyan-700">
                 {applications.filter(app => app.currentCertificateNo).length}
               </span>
             </div>
@@ -206,29 +228,28 @@ const ReportsPage = () => {
         </Card>
       </div>
 
-      {/* Certificate Range Preview */}
       {(certificateRange.start || certificateRange.end) && (
-        <Card title="Certificate Range Preview" subtitle="Applications within selected certificate range">
+        <Card title="Certificate Range Preview" subtitle="Applications within selected certificate range" className="rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full text-left text-sm">
+              <thead>
                 <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">App ID</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Student</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Certificate No</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Route</th>
+                  <th className="border-b border-slate-200 px-3 py-3 text-xs uppercase tracking-wide text-slate-500">App ID</th>
+                  <th className="border-b border-slate-200 px-3 py-3 text-xs uppercase tracking-wide text-slate-500">Student</th>
+                  <th className="border-b border-slate-200 px-3 py-3 text-xs uppercase tracking-wide text-slate-500">Certificate No</th>
+                  <th className="border-b border-slate-200 px-3 py-3 text-xs uppercase tracking-wide text-slate-500">Status</th>
+                  <th className="border-b border-slate-200 px-3 py-3 text-xs uppercase tracking-wide text-slate-500">Route</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody>
                 {getApplicationsInCertificateRange().slice(0, 10).map((app) => (
-                  <tr key={app.appId}>
-                    <td className="px-4 py-2 text-sm font-medium text-gray-900">#{app.appId}</td>
-                    <td className="px-4 py-2 text-sm text-gray-900">{app.studentName}</td>
-                    <td className="px-4 py-2 text-sm font-medium text-blue-600">
+                  <tr key={app.appId} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
+                    <td className="px-3 py-3 font-medium text-slate-800">#{app.appId}</td>
+                    <td className="px-3 py-3 text-slate-700">{app.studentName}</td>
+                    <td className="px-3 py-3 font-medium text-sky-700">
                       {app.currentCertificateNo || 'Not assigned'}
                     </td>
-                    <td className="px-4 py-2">
+                    <td className="px-3 py-3">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         app.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
                         app.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
@@ -237,14 +258,14 @@ const ReportsPage = () => {
                         {app.status}
                       </span>
                     </td>
-                    <td className="px-4 py-2 text-sm text-gray-900">{app.routeFrom} → {app.routeTo}</td>
+                    <td className="px-3 py-3 text-slate-700">{app.routeFrom} {'->'} {app.routeTo}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
           {getApplicationsInCertificateRange().length > 10 && (
-            <div className="mt-4 text-center text-sm text-gray-500">
+            <div className="mt-4 text-center text-sm text-slate-500">
               Showing 10 of {getApplicationsInCertificateRange().length} applications
             </div>
           )}

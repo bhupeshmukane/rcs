@@ -7,13 +7,14 @@ import Button from '../ui/Button';
 import Modal from '../ui/Modal';
 import Card from '../ui/Card';
 
-const ApplicationsManagement = () => {
+const ApplicationsManagement = ({ filter: externalFilter = 'ALL', searchTerm }) => {
   const [applications, setApplications] = useState([]);
   const [filteredApplications, setFilteredApplications] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [filter, setFilter] = useState('all'); // 'all', 'pending', 'approved', 'rejected'
+  const [statusFilter, setStatusFilter] = useState(externalFilter); // ALL, PENDING, APPROVED, ISSUED, REJECTED
+  const [selectedIds, setSelectedIds] = useState([]);
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [isActionModalOpen, setIsActionModalOpen] = useState(false);
@@ -25,27 +26,29 @@ const ApplicationsManagement = () => {
     fetchApplications();
   }, []);
 
+  useEffect(() => {
+    setStatusFilter(externalFilter || 'ALL');
+  }, [externalFilter]);
+
   const filterApplications = useCallback(() => {
     let filtered = applications;
-    
-    switch (filter) {
-      case 'pending':
-        filtered = applications.filter(app => app.status === 'PENDING');
-        break;
-      case 'approved':
-        filtered = applications.filter(app => app.status === 'APPROVED');
-        break;
-      case 'rejected':
-        filtered = applications.filter(app => app.status === 'REJECTED');
-        break;
-      case 'all':
-      default:
-        filtered = applications;
-        break;
+
+    if (statusFilter !== 'ALL') {
+      filtered = filtered.filter(app => app.status === statusFilter);
     }
-    
+
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+
+      filtered = filtered.filter(app =>
+        app.studentName?.toLowerCase().includes(term) ||
+        app.studentId?.toLowerCase().includes(term) ||
+        app.student?.id?.toLowerCase().includes(term)
+      );
+    }
+
     setFilteredApplications(filtered);
-  }, [applications, filter]);
+  }, [applications, statusFilter, searchTerm]);
 
   useEffect(() => {
     filterApplications();
@@ -54,8 +57,12 @@ const ApplicationsManagement = () => {
   const fetchApplications = async () => {
     try {
       setLoading(true);
+      setError('');
       const data = await applicationService.getAllApplications();
-      setApplications(data);
+      const sorted = [...data].sort(
+        (a, b) => new Date(b.applicationDate) - new Date(a.applicationDate)
+      );
+      setApplications(sorted);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -63,26 +70,21 @@ const ApplicationsManagement = () => {
     }
   };
 
-  const handleStatusUpdate = async (applicationId, status, certificateNumber = null) => {
-    try {
-      // Update application status
-      await applicationService.updateApplicationStatus(applicationId, status);
-      
-      // If approving and certificate number provided, assign it
-      if (status === 'APPROVED' && certificateNumber) {
-        await applicationService.assignCertificateNumber(applicationId, certificateNumber);
-      }
-      
-      setSuccess('Application updated successfully!');
-      fetchApplications(); // Refresh the list
-      setIsDetailModalOpen(false);
-      setIsActionModalOpen(false);
-      setCertificateNo('');
-      setRejectionReason('');
-    } catch (err) {
-      setError(err.message);
-    }
-  };
+  const printSingle = (id) => {
+  window.open(`http://localhost:8080/api/print/${id}`, "_blank");
+};
+
+const printBatch = async () => {
+  const response = await fetch("http://localhost:8080/api/print/batch", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(selectedIds)
+  });
+
+  const blob = await response.blob();
+  const url = window.URL.createObjectURL(blob);
+  window.open(url);
+};
 
   const openApplicationDetails = (application) => {
     setSelectedApplication(application);
@@ -92,28 +94,61 @@ const ApplicationsManagement = () => {
   const openActionModal = (application, type) => {
     setSelectedApplication(application);
     setActionType(type);
+    setCertificateNo('');
+    setRejectionReason('');
     setIsActionModalOpen(true);
   };
 
-  const getStatusBadge = (status) => {
-    const statusClasses = {
-      PENDING: 'bg-yellow-100 text-yellow-800',
-      APPROVED: 'bg-green-100 text-green-800',
-      REJECTED: 'bg-red-100 text-red-800'
-    };
-
-    return (
-      <span 
-        className={`px-2 py-1 rounded-full text-xs font-medium ${statusClasses[status]}`}>
-        {status}
-      </span>
-    );
+  const closeActionModal = () => {
+    setIsActionModalOpen(false);
+    setSelectedApplication(null);
+    setActionType('');
+    setCertificateNo('');
+    setRejectionReason('');
   };
 
-  const getFilterButtonClass = (filterName) => {
-    return filter === filterName
-      ? 'bg-blue-600 text-white'
-      : 'bg-gray-200 text-gray-700 hover:bg-gray-300';
+  const handleStatusUpdate = async (applicationId, status, certificateNumber = null) => {
+    if (!applicationId) return;
+
+    try {
+      if (status === 'ISSUE') {
+        await applicationService.assignCertificateNumber(applicationId, certificateNo.trim());
+        setSuccess('Concession issued by staff successfully!');
+      } else {
+        await applicationService.updateApplicationStatus(applicationId, status, rejectionReason);
+        setSuccess('Application updated successfully!');
+      }
+
+      fetchApplications(); // Refresh the list
+
+      if (status === 'ISSUE') {
+        setStatusFilter('ALL');
+      }
+
+      setIsDetailModalOpen(false);
+      setIsActionModalOpen(false);
+      setCertificateNo('');
+      setRejectionReason('');
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const handleDownloadCsv = async () => {
+    try {
+      setError('');
+      const csvBlob = await applicationService.downloadApplicationsCsv();
+      const url = window.URL.createObjectURL(new Blob([csvBlob], { type: 'text/csv' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', 'applications.csv');
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err.message);
+    }
   };
 
   // 🔹 View caste certificate (SC / ST only)
@@ -148,122 +183,171 @@ const ApplicationsManagement = () => {
     }
   };
 
+  const getStatusBadge = (status) => {
+    const statusClasses = {
+      PENDING: 'bg-amber-100 text-amber-800',
+      APPROVED: 'bg-emerald-100 text-emerald-800',
+      ISSUED: 'bg-cyan-100 text-cyan-800',
+      REJECTED: 'bg-rose-100 text-rose-800'
+    };
+
+    return (
+      <span 
+        className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusClasses[status] || 'bg-slate-100 text-slate-700'}`}
+      >
+        {status}
+      </span>
+    );
+  };
+
+  const getFilterButtonClass = (filterName) => {
+    return statusFilter === filterName
+      ? 'bg-slate-900 text-white'
+      : 'bg-slate-100 text-slate-700 hover:bg-slate-200';
+  };
+
   if (loading) return <LoadingSpinner text="Loading applications..." />;
   if (error) return <ErrorMessage message={error} />;
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Applications Management</h2>
-        <Button onClick={fetchApplications} variant="outline">
-          Refresh
-        </Button>
+        <h2 className="text-2xl font-black text-slate-900">Applications Management</h2>
+        <div className="flex gap-2">
+          <Button onClick={handleDownloadCsv} variant="outline">
+            Download CSV
+          </Button>
+          <Button onClick={fetchApplications} variant="outline">
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {success && <SuccessMessage message={success} onDismiss={() => setSuccess('')} />}
-      {error && <ErrorMessage message={error} onDismiss={() => setError('')} />}
 
       {/* Filter Buttons */}
-      <Card>
+      <Card className="rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="flex flex-wrap gap-2">
           <button
-            onClick={() => setFilter('all')}
-            className={`px-4 py-2 rounded-md text-sm font-medium ${getFilterButtonClass('all')}`}
+            onClick={() => setStatusFilter('ALL')}
+            className={`rounded-xl px-4 py-2 text-sm font-semibold ${getFilterButtonClass('ALL')}`}
           >
             All Applications ({applications.length})
           </button>
           <button
-            onClick={() => setFilter('pending')}
-            className={`px-4 py-2 rounded-md text-sm font-medium ${getFilterButtonClass('pending')}`}
+            onClick={() => setStatusFilter('PENDING')}
+            className={`rounded-xl px-4 py-2 text-sm font-semibold ${getFilterButtonClass('PENDING')}`}
           >
             Pending ({applications.filter(app => app.status === 'PENDING').length})
           </button>
           <button
-            onClick={() => setFilter('approved')}
-            className={`px-4 py-2 rounded-md text-sm font-medium ${getFilterButtonClass('approved')}`}
+            onClick={() => setStatusFilter('APPROVED')}
+            className={`rounded-xl px-4 py-2 text-sm font-semibold ${getFilterButtonClass('APPROVED')}`}
           >
             Approved ({applications.filter(app => app.status === 'APPROVED').length})
           </button>
           <button
-            onClick={() => setFilter('rejected')}
-            className={`px-4 py-2 rounded-md text-sm font-medium ${getFilterButtonClass('rejected')}`}
+            onClick={() => setStatusFilter('REJECTED')}
+            className={`rounded-xl px-4 py-2 text-sm font-semibold ${getFilterButtonClass('REJECTED')}`}
           >
             Rejected ({applications.filter(app => app.status === 'REJECTED').length})
+          </button>
+          <button
+            onClick={() => setStatusFilter('ISSUED')}
+            className={`rounded-xl px-4 py-2 text-sm font-semibold ${getFilterButtonClass('ISSUED')}`}
+          >
+            Issued ({applications.filter(app => app.status === 'ISSUED').length})
           </button>
         </div>
       </Card>
 
-      <Card>
+      <Card className="rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full text-left text-sm">
+            <thead>
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Application ID</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Student</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Route</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Certificate No</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                <th className="border-b border-slate-200 px-3 py-3 text-xs uppercase tracking-wide text-slate-500">
+                  ID
+                </th>
+                <th className="border-b border-slate-200 px-3 py-3 text-xs uppercase tracking-wide text-slate-500">
+                  Student
+                </th>
+                <th className="border-b border-slate-200 px-3 py-3 text-xs uppercase tracking-wide text-slate-500">
+                  Route
+                </th>
+                <th className="border-b border-slate-200 px-3 py-3 text-xs uppercase tracking-wide text-slate-500">
+                  Date
+                </th>
+                <th className="border-b border-slate-200 px-3 py-3 text-xs uppercase tracking-wide text-slate-500">
+                  Status
+                </th>
+                <th className="border-b border-slate-200 px-3 py-3 text-xs uppercase tracking-wide text-slate-500">
+                  Certificate
+                </th>
+                <th className="border-b border-slate-200 px-3 py-3 text-xs uppercase tracking-wide text-slate-500">
+                  Actions
+                </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredApplications.map((application) => (
-                <tr key={application.appId} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    #{application.appId}
+            <tbody>
+              {filteredApplications.map((app) => (
+                <tr key={app.appId} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
+                  <td className="whitespace-nowrap px-3 py-3 font-medium text-slate-800">
+                    #{app.appId}
                   </td>
                   <td 
-                    className="px-6 py-4 whitespace-nowrap text-sm text-blue-600 cursor-pointer hover:underline"
-                    onClick={() => openApplicationDetails(application)}
+                    className="cursor-pointer whitespace-nowrap px-3 py-3 text-sky-700 hover:underline"
+                    onClick={() => openApplicationDetails(app)}
                   >
-                    {application.studentName || 'N/A'}
+                    {app.studentName}
                     <br />
-                    <span className="text-xs text-gray-500">{application.student?.id}</span>
+                    <span className="text-xs text-slate-500">{app.studentId || app.student?.id || 'N/A'}</span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {application.routeFrom} – {application.routeTo}
+                  <td className="whitespace-nowrap px-3 py-3 text-slate-700">
+                    {app.routeFrom} {'->'} {app.routeTo}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {new Date(application.applicationDate).toLocaleDateString()}
+                  <td className="whitespace-nowrap px-3 py-3 text-slate-700">
+                    {new Date(app.applicationDate).toLocaleDateString()}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {getStatusBadge(application.status)}
+                  <td className="whitespace-nowrap px-3 py-3">
+                    {getStatusBadge(app.status)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {application.currentCertificateNo || 'Not assigned'}
+                  <td className="whitespace-nowrap px-3 py-3 text-slate-700">
+                    {app.currentCertificateNo || 'Not assigned'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                    <Button
-                      size="sm"
-                      onClick={() => openActionModal(application, 'APPROVED')}
-                      disabled={application.status === 'APPROVED'}
-                    >
-                      ✅ Approve
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="danger"
-                      onClick={() => openActionModal(application, 'REJECTED')}
-                      disabled={application.status === 'REJECTED'}
-                    >
-                      ❌ Reject
-                    </Button>
-                    {(application.category === 'SC' || application.category === 'ST') && (
+                  <td className="whitespace-nowrap px-3 py-3 text-sm font-medium space-x-2">
+                    {(app.status === 'PENDING' || app.status === 'APPROVED') && (
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        onClick={() => openActionModal(app, 'REJECTED')}
+                      >
+                        Reject
+                      </Button>
+                    )}
+                    {app.status === 'APPROVED' && (
+                      <Button
+                        size="sm"
+                        onClick={() => openActionModal(app, 'ISSUE')}
+                      >
+                        Issue Concession
+                      </Button>
+                    )}
+                    {(app.category === 'SC' || app.category === 'ST') && (
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => handleViewCasteCertificate(application)}
+                        onClick={() => handleViewCasteCertificate(app)}
                       >
-                        📄 View Certificate
+                        View Certificate
                       </Button>
                     )}
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => handleViewAadharCard(application)}
+                      onClick={() => handleViewAadharCard(app)}
                     >
-                      🆔 View Aadhaar
+                      View Aadhaar
                     </Button>
                   </td>
                 </tr>
@@ -273,8 +357,8 @@ const ApplicationsManagement = () => {
         </div>
 
         {filteredApplications.length === 0 && (
-          <div className="text-center py-8 text-gray-500">
-            No {filter !== 'all' ? filter : ''} applications found.
+          <div className="py-10 text-center text-sm text-slate-500">
+            No {statusFilter !== 'ALL' ? statusFilter.toLowerCase() : ''} applications found.
           </div>
         )}
       </Card>
@@ -290,32 +374,32 @@ const ApplicationsManagement = () => {
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Student Name</label>
-                <p className="text-sm text-gray-900">{selectedApplication.studentName}</p>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Student Name</label>
+                <p className="text-sm text-slate-900">{selectedApplication.studentName}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Student ID</label>
-                <p className="text-sm text-gray-900">{selectedApplication.student?.id}</p>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Student ID</label>
+                <p className="text-sm text-slate-900">{selectedApplication.studentId || selectedApplication.student?.id || 'N/A'}</p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
-                <p className="text-sm text-gray-900">
+                <label className="mb-1 block text-sm font-medium text-slate-700">Date of Birth</label>
+                <p className="text-sm text-slate-900">
                   {new Date(selectedApplication.studentDob).toLocaleDateString()}
                 </p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                <p className="text-sm text-gray-900">{selectedApplication.category}</p>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Category</label>
+                <p className="text-sm text-slate-900">{selectedApplication.category}</p>
               </div>
             </div>
 
-            {/* 🔹 FIXED: Added Aadhaar Card viewing option */}
+            {/* Aadhaar Card viewing option */}
             {selectedApplication.aadharCard && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="mb-1 block text-sm font-medium text-slate-700">
                   Aadhaar Card
                 </label>
                 <Button
@@ -323,15 +407,16 @@ const ApplicationsManagement = () => {
                   variant="outline"
                   onClick={() => handleViewAadharCard(selectedApplication)}
                 >
-                  🆔 View Uploaded Aadhaar Card
+                  View Uploaded Aadhaar Card
                 </Button>
               </div>
             )}
 
+            {/* Caste Certificate viewing option for SC/ST */}
             {(selectedApplication.category === 'SC' || selectedApplication.category === 'ST') &&
               selectedApplication.casteCertificate && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="mb-1 block text-sm font-medium text-slate-700">
                     Caste Certificate
                   </label>
                   <Button
@@ -339,39 +424,39 @@ const ApplicationsManagement = () => {
                     variant="outline"
                     onClick={() => handleViewCasteCertificate(selectedApplication)}
                   >
-                    📄 View Uploaded Caste Certificate
+                    View Uploaded Caste Certificate
                   </Button>
                 </div>
             )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">From Station</label>
-                <p className="text-sm text-gray-900">{selectedApplication.routeFrom}</p>
+                <label className="mb-1 block text-sm font-medium text-slate-700">From Station</label>
+                <p className="text-sm text-slate-900">{selectedApplication.routeFrom}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">To Station</label>
-                <p className="text-sm text-gray-900">{selectedApplication.routeTo}</p>
+                <label className="mb-1 block text-sm font-medium text-slate-700">To Station</label>
+                <p className="text-sm text-slate-900">{selectedApplication.routeTo}</p>
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Application Date</label>
-                <p className="text-sm text-gray-900">
+                <label className="mb-1 block text-sm font-medium text-slate-700">Application Date</label>
+                <p className="text-sm text-slate-900">
                   {new Date(selectedApplication.applicationDate).toLocaleDateString()}
                 </p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Status</label>
                 <div className="text-sm">{getStatusBadge(selectedApplication.status)}</div>
               </div>
             </div>
 
             {selectedApplication.currentCertificateNo && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Certificate Number</label>
-                <p className="text-sm text-gray-900">{selectedApplication.currentCertificateNo}</p>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Certificate Number</label>
+                <p className="text-sm text-slate-900">{selectedApplication.currentCertificateNo}</p>
               </div>
             )}
 
@@ -389,6 +474,16 @@ const ApplicationsManagement = () => {
                   </Button>
                 </>
               )}
+              {selectedApplication.status === 'APPROVED' && (
+                <>
+                  <Button onClick={() => openActionModal(selectedApplication, 'ISSUE')}>
+                    Issue Concession
+                  </Button>
+                  <Button variant="danger" onClick={() => openActionModal(selectedApplication, 'REJECTED')}>
+                    Reject Application
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         )}
@@ -397,27 +492,29 @@ const ApplicationsManagement = () => {
       {/* Action Modal */}
       <Modal
         isOpen={isActionModalOpen}
-        onClose={() => {
-          setIsActionModalOpen(false);
-          setCertificateNo('');
-          setRejectionReason('');
-        }}
+        onClose={closeActionModal}
         title={
-          actionType === 'APPROVED' ? 'Approve Application' : 'Reject Application'
+          actionType === 'APPROVED'
+            ? 'Approve Application'
+            : actionType === 'ISSUE'
+              ? 'Issue Concession'
+              : 'Reject Application'
         }
       >
         {selectedApplication && (
           <div className="space-y-4">
-            <p className="text-gray-600">
+            <p className="text-slate-600">
               {actionType === 'APPROVED' 
                 ? `Approve application #${selectedApplication.appId} for ${selectedApplication.studentName}?`
+                : actionType === 'ISSUE'
+                  ? `Issue concession for application #${selectedApplication.appId} (${selectedApplication.studentName})?`
                 : `Reject application #${selectedApplication.appId} for ${selectedApplication.studentName}?`
               }
             </p>
 
-            {actionType === 'APPROVED' && (
+            {actionType === 'ISSUE' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="mb-1 block text-sm font-medium text-slate-700">
                   Certificate Number *
                 </label>
                 <input
@@ -425,52 +522,49 @@ const ApplicationsManagement = () => {
                   value={certificateNo}
                   onChange={(e) => setCertificateNo(e.target.value)}
                   placeholder="Enter certificate number"
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
             )}
 
             {actionType === 'REJECTED' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="mb-1 block text-sm font-medium text-slate-700">
                   Rejection Reason *
                 </label>
                 <textarea
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
                   placeholder="Enter reason for rejection"
-                  required
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-xl border border-slate-300 px-3 py-2 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
+                  required
                 />
               </div>
             )}
 
             <div className="flex space-x-3 justify-end pt-4">
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setIsActionModalOpen(false);
-                  setCertificateNo('');
-                  setRejectionReason('');
-                }}
-              >
+              <Button variant="outline" onClick={closeActionModal}>
                 Cancel
               </Button>
               <Button
-                variant={actionType === 'APPROVED' ? 'success' : 'danger'}
                 onClick={() => handleStatusUpdate(
                   selectedApplication.appId, 
-                  actionType,
-                  actionType === 'APPROVED' ? certificateNo : null
+                  actionType
                 )}
                 disabled={
-                  (actionType === 'APPROVED' && !certificateNo.trim()) ||
+                  (actionType === 'ISSUE' && !certificateNo.trim()) ||
                   (actionType === 'REJECTED' && !rejectionReason.trim())
                 }
               >
-                Confirm {actionType === 'APPROVED' ? 'Approve' : 'Reject'}
+                Confirm {
+                  actionType === 'APPROVED'
+                    ? 'Approve'
+                    : actionType === 'ISSUE'
+                        ? 'Issue Concession'
+                      : 'Reject'
+                }
               </Button>
             </div>
           </div>

@@ -16,7 +16,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/reports")
-@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173"}, allowCredentials = "true")
 public class ReportController {
 
     @Autowired
@@ -38,7 +38,6 @@ public class ReportController {
 
         // 1️⃣ Logged-in staff
         String email = (String) session.getAttribute("staffEmail");
-        String department = (String) session.getAttribute("staffDepartment");
         String role = (String) session.getAttribute("userRole");
 
         if (email == null || !"staff".equals(role)) {

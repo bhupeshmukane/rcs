@@ -3,6 +3,22 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --color-bg: #f1f5f9;
+  --color-surface: #ffffff;
+  --color-surface-soft: #f8fafc;
+  --color-text: #0f172a;
+  --color-text-muted: #475569;
+  --color-border: #e2e8f0;
+  --color-primary: #0f172a;
+  --color-primary-hover: #334155;
+  --color-accent: #0369a1;
+  --color-danger: #e11d48;
+  --shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.06), 0 4px 20px rgba(15, 23, 42, 0.04);
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+}
+
 /* Custom Base Styles */
 @layer base {
   * {
@@ -16,17 +32,50 @@
   body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
     line-height: 1.6;
-    color: #374151;
-    background-color: #f9fafb;
+    color: var(--color-text);
+    background-color: var(--color-bg);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Fix: Change input text color to black */
-  input, textarea, select {
-    color: #000000 !important;
+  input,
+  textarea,
+  select {
+    color: var(--color-text);
+    background-color: var(--color-surface);
   }
 
-  input:disabled, textarea:disabled, select:disabled {
-    color: #6b7280 !important;
+  input::placeholder,
+  textarea::placeholder {
+    color: #64748b;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  button,
+  input,
+  select,
+  textarea,
+  a {
+    outline-color: var(--color-accent);
+  }
+
+  button:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  a:focus-visible {
+    outline: 2px solid #7dd3fc;
+    outline-offset: 2px;
+  }
+
+  input:disabled,
+  textarea:disabled,
+  select:disabled {
+    color: #64748b;
   }
 
   /* Custom Scrollbar */
@@ -51,47 +100,49 @@
 
 /* Custom Component Styles */
 @layer components {
-  /* Form Styles - Fixed text color */
+  /* Form Styles */
   .form-input {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-200 text-black;
+    @apply w-full rounded-xl border border-slate-300 px-3 py-2 text-slate-900 transition duration-200;
+    @apply focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200;
   }
 
   .form-select {
-    @apply w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white transition duration-200 text-black;
+    @apply w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-slate-900 transition duration-200;
+    @apply focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200;
   }
 
   .form-label {
-    @apply block text-sm font-medium text-gray-700 mb-1;
+    @apply mb-1 block text-sm font-medium text-slate-700;
   }
 
   /* Table Styles */
   .table-container {
-    @apply overflow-x-auto shadow ring-1 ring-black ring-opacity-5 rounded-lg;
+    @apply overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm;
   }
 
   .table {
-    @apply min-w-full divide-y divide-gray-200 bg-white;
+    @apply min-w-full bg-white text-left text-sm;
   }
 
   .table th {
-    @apply px-6 py-3 bg-gray-50 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+    @apply border-b border-slate-200 px-3 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500;
   }
 
   .table td {
-    @apply px-6 py-4 whitespace-nowrap text-sm text-gray-900;
+    @apply whitespace-nowrap px-3 py-3 text-slate-700;
   }
 
   .table tr {
-    @apply hover:bg-gray-50 transition-colors duration-150;
+    @apply border-b border-slate-100 transition-colors duration-150 hover:bg-slate-50;
   }
 
   /* Card Styles */
   .card {
-    @apply bg-white rounded-lg shadow-md border border-gray-200;
+    @apply rounded-2xl border border-slate-200 bg-white shadow-sm;
   }
 
   .card-header {
-    @apply px-6 py-4 border-b border-gray-200;
+    @apply border-b border-slate-200 px-6 py-4;
   }
 
   .card-body {
@@ -100,27 +151,28 @@
 
   /* Button Variants */
   .btn {
-    @apply inline-flex items-center justify-center px-4 py-2 rounded-md font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply inline-flex items-center justify-center rounded-xl px-4 py-2 font-semibold transition-colors duration-200;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .btn-primary {
-    @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500;
+    @apply bg-slate-900 text-white hover:bg-slate-700 focus:ring-slate-500;
   }
 
   .btn-secondary {
-    @apply bg-gray-600 text-white hover:bg-gray-700 focus:ring-gray-500;
+    @apply bg-slate-600 text-white hover:bg-slate-700 focus:ring-slate-500;
   }
 
   .btn-success {
-    @apply bg-green-600 text-white hover:bg-green-700 focus:ring-green-500;
+    @apply bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500;
   }
 
   .btn-danger {
-    @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
+    @apply bg-rose-600 text-white hover:bg-rose-700 focus:ring-rose-500;
   }
 
   .btn-outline {
-    @apply border border-gray-300 text-gray-700 hover:bg-gray-50 focus:ring-blue-500;
+    @apply border border-slate-300 text-slate-700 hover:bg-slate-100 focus:ring-sky-500;
   }
 
   /* Status Badges */
@@ -129,15 +181,15 @@
   }
 
   .status-pending {
-    @apply bg-yellow-100 text-yellow-800;
+    @apply bg-amber-100 text-amber-800;
   }
 
   .status-approved {
-    @apply bg-green-100 text-green-800;
+    @apply bg-emerald-100 text-emerald-800;
   }
 
   .status-rejected {
-    @apply bg-red-100 text-red-800;
+    @apply bg-rose-100 text-rose-800;
   }
 
   /* Loading Animation */
@@ -156,7 +208,7 @@
 
   /* Gradient Backgrounds */
   .gradient-primary {
-    @apply bg-gradient-to-r from-blue-600 to-purple-600;
+    @apply bg-gradient-to-r from-sky-600 via-blue-700 to-cyan-700;
   }
 
   .gradient-success {
@@ -182,7 +234,7 @@
 
   /* Focus Styles for Accessibility */
   .focus-ring {
-    @apply focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2;
+    @apply focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2;
   }
 
   /* Animation Classes */

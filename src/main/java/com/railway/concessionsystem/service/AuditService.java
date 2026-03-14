@@ -1,7 +1,7 @@
 package com.railway.concessionsystem.service;
 
 import com.railway.concessionsystem.model.AuditLog;
-import com.railway.concessionsystem.repository.AuditLogRepository;
+import com.railway.concessionsystem.repository.AuditRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -9,14 +9,21 @@ import org.springframework.stereotype.Service;
 public class AuditService {
 
     @Autowired
-    private AuditLogRepository auditRepository;
+    private AuditRepository auditRepository;
 
-    public void log(String actor, String action, String details) {
+    public void log(String action,
+                    String performedBy,
+                    String entityType,
+                    String entityId,
+                    String details) {
 
-        AuditLog log = new AuditLog();
-        log.setActor(actor);
-        log.setAction(action);
-        log.setDetails(details);
+        AuditLog log = new AuditLog(
+                action,
+                performedBy,
+                entityType,
+                entityId,
+                details
+        );
 
         auditRepository.save(log);
     }

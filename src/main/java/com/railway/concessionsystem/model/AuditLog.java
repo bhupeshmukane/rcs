@@ -11,47 +11,48 @@ public class AuditLog {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String actor;
+    @Column(name = "action")
     private String action;
+
+    @Column(name = "performed_by")
+    private String performedBy;
+
+    @Column(name = "entity_type")
+    private String entityType;
+
+    @Column(name = "entity_id")
+    private String entityId;
+
+    @Column(name = "details", length = 1000)
     private String details;
 
-    private LocalDateTime timestamp = LocalDateTime.now();
+    @Column(name = "timestamp")
+    private LocalDateTime timestamp;
 
-    // ===== Getters & Setters =====
+    // ✅ REQUIRED CONSTRUCTOR
+    public AuditLog(String action,
+                    String performedBy,
+                    String entityType,
+                    String entityId,
+                    String details) {
 
-    public Long getId() {
-        return id;
-    }
-
-    public String getActor() {
-        return actor;
-    }
-
-    public void setActor(String actor) {
-        this.actor = actor;
-    }
-
-    public String getAction() {
-        return action;
-    }
-
-    public void setAction(String action) {
         this.action = action;
-    }
-
-    public String getDetails() {
-        return details;
-    }
-
-    public void setDetails(String details) {
+        this.performedBy = performedBy;
+        this.entityType = entityType;
+        this.entityId = entityId;
         this.details = details;
+        this.timestamp = LocalDateTime.now();
     }
 
-    public LocalDateTime getTimestamp() {
-        return timestamp;
-    }
+    // ✅ Default constructor REQUIRED by JPA
+    public AuditLog() {}
 
-    public void setTimestamp(LocalDateTime timestamp) {
-        this.timestamp = timestamp;
-    }
+    // Getters
+    public Long getId() { return id; }
+    public String getAction() { return action; }
+    public String getPerformedBy() { return performedBy; }
+    public String getEntityType() { return entityType; }
+    public String getEntityId() { return entityId; }
+    public String getDetails() { return details; }
+    public LocalDateTime getTimestamp() { return timestamp; }
 }

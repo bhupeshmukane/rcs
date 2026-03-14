@@ -5,233 +5,307 @@ import SuccessMessage from '../../components/common/SuccessMessage';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 import Card from '../../components/ui/Card';
 import Button from '../../components/ui/Button';
-import Modal from '../../components/ui/Modal';
-import StudentForm from '../../components/forms/StudentForm';
 
 const StudentsPage = () => {
+
   const [students, setStudents] = useState([]);
-  const [filteredStudents, setFilteredStudents] = useState([]);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedStudent, setSelectedStudent] = useState(null);
 
   useEffect(() => {
     fetchStudents();
   }, []);
 
-  useEffect(() => {
-    filterStudents();
-  }, [students, searchTerm]);
-
   const fetchStudents = async () => {
+
     try {
+
       setLoading(true);
-      const data = await studentService.getAllStudents();
+
+      const data =
+        await studentService.getAllStudents();
+
       setStudents(data);
+
     } catch (err) {
+
       setError(err.message);
+
     } finally {
+
       setLoading(false);
-    }
-  };
 
-  const filterStudents = () => {
-    if (!searchTerm.trim()) {
-      setFilteredStudents(students);
-      return;
     }
 
-    const filtered = students.filter(student =>
-      student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.category.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-    setFilteredStudents(filtered);
   };
 
-  const handleSearch = (e) => {
-    setSearchTerm(e.target.value);
-  };
-
-  const handleAddStudent = () => {
-    setSelectedStudent(null);
-    setIsModalOpen(true);
-  };
-
-  const handleEditStudent = (student) => {
-    setSelectedStudent(student);
-    setIsModalOpen(true);
-  };
-
-  const handleDeleteStudent = async (studentId) => {
-    if (!window.confirm('Are you sure you want to delete this student? This action cannot be undone.')) {
-      return;
-    }
+  // Toggle Active
+  const handleToggleStatus = async (id) => {
 
     try {
-      await studentService.deleteStudent(studentId);
-      setSuccess('Student deleted successfully!');
-      fetchStudents(); // Refresh the list
+
+      await studentService.toggleStudentStatus(id);
+
+      setSuccess("Student status updated");
+
+      fetchStudents();
+
     } catch (err) {
+
       setError(err.message);
+
     }
+
   };
 
-  const handleStudentSuccess = () => {
-    setIsModalOpen(false);
-    setSuccess(selectedStudent ? 'Student updated successfully!' : 'Student added successfully!');
-    fetchStudents(); // Refresh the list
+  // Toggle Drop Year
+  const handleToggleDropYear = async (id) => {
+
+    try {
+
+      await studentService.toggleDropYear(id);
+
+      setSuccess("Drop year updated");
+
+      fetchStudents();
+
+    } catch (err) {
+
+      setError(err.message);
+
+    }
+
   };
 
-  const getApplicationCount = (student) => {
-    return student.applications ? student.applications.length : 0;
+  // Delete Student
+  const handleDeleteStudent = async (id) => {
+
+    if (!window.confirm("Delete this student permanently?"))
+      return;
+
+    try {
+
+      await studentService.deleteStudent(id);
+
+      setSuccess("Student deleted");
+
+      fetchStudents();
+
+    } catch (err) {
+
+      setError(err.message);
+
+    }
+
   };
 
-  if (loading) return <LoadingSpinner text="Loading students..." />;
-  if (error) return <ErrorMessage message={error} />;
+  // Checkbox Select
+  const handleCheckboxChange = (id) => {
+
+    setSelectedIds(prev =>
+      prev.includes(id)
+        ? prev.filter(i => i !== id)
+        : [...prev, id]
+    );
+
+  };
+
+  const handleSelectAll = () => {
+
+    if (selectedIds.length === students.length)
+      setSelectedIds([]);
+    else
+      setSelectedIds(students.map(s => s.id));
+
+  };
+
+  // Bulk Delete
+  const handleBulkDelete = async () => {
+
+    if (selectedIds.length === 0)
+      return;
+
+    if (!window.confirm("Delete selected students?"))
+      return;
+
+    try {
+
+      await studentService.bulkDeleteStudents(selectedIds);
+
+      setSuccess("Selected students deleted");
+
+      setSelectedIds([]);
+
+      fetchStudents();
+
+    } catch (err) {
+
+      setError(err.message);
+
+    }
+
+  };
+
+  // Search filter
+  const filteredStudents = students.filter(student =>
+    student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    student.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    student.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (loading)
+    return <LoadingSpinner text="Loading students..." />;
+
+  if (error)
+    return <ErrorMessage message={error} />;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Students Management</h1>
-          <p className="text-gray-600">Manage student records and applications</p>
+
+    <div className="space-y-8">
+      <section className="relative overflow-hidden rounded-3xl border border-slate-200/60 bg-gradient-to-r from-slate-950 via-blue-950 to-teal-800 p-6 text-white shadow-xl md:p-8">
+        <div className="pointer-events-none absolute -right-12 -top-12 h-44 w-44 rounded-full bg-white/20 blur-2xl" />
+        <div className="relative z-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-sky-100">Staff Console</p>
+            <h1 className="mt-2 text-3xl font-black tracking-tight md:text-4xl">Students Management</h1>
+            <p className="mt-2 max-w-2xl text-sm text-sky-100 md:text-base">
+              Search, update, and maintain student records used for concession approvals.
+            </p>
+          </div>
+          {selectedIds.length > 0 && (
+            <Button variant="danger" onClick={handleBulkDelete}>
+              Delete Selected ({selectedIds.length})
+            </Button>
+          )}
         </div>
-        <Button onClick={handleAddStudent} className="mt-4 sm:mt-0">
-          👥 Add New Student
-        </Button>
-      </div>
+      </section>
 
-      {success && <SuccessMessage message={success} onDismiss={() => setSuccess('')} />}
+      {success && (
+        <SuccessMessage
+          message={success}
+          onDismiss={() => setSuccess('')}
+        />
+      )}
 
-      {/* Search and Stats */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <div className="flex items-center">
-            <div className="relative flex-1">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg className="h-5 w-5 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-                </svg>
-              </div>
-              <input
-                type="text"
-                placeholder="Search students by name, email, or ID..."
-                value={searchTerm}
-                onChange={handleSearch}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-          </div>
-        </Card>
+      <Card className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="mb-4">
+          <input
+            type="text"
+            placeholder="Search students..."
+            className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200 md:w-80"
+            value={searchTerm}
+            onChange={(e) =>
+              setSearchTerm(e.target.value)
+            }
+          />
+        </div>
 
-        <Card>
-          <div className="grid grid-cols-2 gap-4 text-center">
-            <div>
-              <div className="text-2xl font-bold text-blue-600">{students.length}</div>
-              <div className="text-sm text-gray-600">Total Students</div>
-            </div>
-            <div>
-              <div className="text-2xl font-bold text-green-600">
-                {students.filter(s => getApplicationCount(s) > 0).length}
-              </div>
-              <div className="text-sm text-gray-600">Active Applicants</div>
-            </div>
-          </div>
-        </Card>
-      </div>
-
-      {/* Students Table */}
-      <Card>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full text-left text-sm">
+            <thead>
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Student ID</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Email</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Applications</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                <th className="border-b border-slate-200 px-3 py-3">
+                  <input
+                    type="checkbox"
+                    checked={
+                      selectedIds.length === students.length &&
+                      students.length > 0
+                    }
+                    onChange={handleSelectAll}
+                  />
+                </th>
+                <th className="border-b border-slate-200 px-3 py-3 text-xs uppercase tracking-wide text-slate-500">ID</th>
+                <th className="border-b border-slate-200 px-3 py-3 text-xs uppercase tracking-wide text-slate-500">Name</th>
+                <th className="border-b border-slate-200 px-3 py-3 text-xs uppercase tracking-wide text-slate-500">Email</th>
+                <th className="border-b border-slate-200 px-3 py-3 text-xs uppercase tracking-wide text-slate-500">Department</th>
+                <th className="border-b border-slate-200 px-3 py-3 text-xs uppercase tracking-wide text-slate-500">Year</th>
+                <th className="border-b border-slate-200 px-3 py-3 text-xs uppercase tracking-wide text-slate-500">Status</th>
+                <th className="border-b border-slate-200 px-3 py-3 text-xs uppercase tracking-wide text-slate-500">Drop Year</th>
+                <th className="border-b border-slate-200 px-3 py-3 text-xs uppercase tracking-wide text-slate-500">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredStudents.map((student) => (
-                <tr key={student.id}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {student.id}
+            <tbody>
+              {filteredStudents.map(student => (
+                <tr
+                  key={student.id}
+                  className="border-b border-slate-100 last:border-0 hover:bg-slate-50"
+                >
+                  <td className="px-3 py-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(student.id)}
+                      onChange={() =>
+                        handleCheckboxChange(student.id)
+                      }
+                    />
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {student.name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {student.email}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className="px-2 py-1 text-xs font-medium bg-gray-100 text-gray-800 rounded-full">
-                      {student.category || 'N/A'}
+                  <td className="px-3 py-3 font-medium text-slate-800">{student.id}</td>
+                  <td className="px-3 py-3 text-slate-700">{student.name}</td>
+                  <td className="px-3 py-3 text-slate-700">{student.email}</td>
+                  <td className="px-3 py-3 text-slate-700">{student.department}</td>
+                  <td className="px-3 py-3 text-slate-700">{student.year}</td>
+                  <td className="px-3 py-3">
+                    <span className={`px-2 py-1 text-xs rounded-full ${
+                      student.isActive
+                        ? 'bg-green-100 text-green-700'
+                        : 'bg-red-100 text-red-700'
+                    }`}>
+                      {student.isActive ? "Active" : "Inactive"}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {getApplicationCount(student)}
-                    </span>
+                  <td className="px-3 py-3 text-slate-700">
+                    {student.isDropYear ? "Yes" : "No"}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleEditStudent(student)}
-                    >
-                      ✏️ Edit
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="danger"
-                      onClick={() => handleDeleteStudent(student.id)}
-                    >
-                      🗑️ Delete
-                    </Button>
+                  <td className="px-3 py-3">
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-slate-300 text-slate-700 hover:bg-slate-100"
+                        onClick={() =>
+                          handleToggleStatus(student.id)
+                        }
+                      >
+                        {student.isActive
+                          ? "Deactivate"
+                          : "Activate"}
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-slate-300 text-slate-700 hover:bg-slate-100"
+                        onClick={() =>
+                          handleToggleDropYear(student.id)
+                        }
+                      >
+                        Drop Year
+                      </Button>
+
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        onClick={() =>
+                          handleDeleteStudent(student.id)
+                        }
+                      >
+                        Delete
+                      </Button>
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-
-        {filteredStudents.length === 0 && (
-          <div className="text-center py-12">
-            <div className="text-gray-400 text-6xl mb-4">👥</div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {searchTerm ? 'No students found' : 'No students registered'}
-            </h3>
-            <p className="text-gray-500">
-              {searchTerm ? 'Try adjusting your search terms' : 'Get started by adding your first student'}
-            </p>
-          </div>
-        )}
       </Card>
-
-      {/* Add/Edit Student Modal */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={selectedStudent ? 'Edit Student' : 'Add New Student'}
-        size="lg"
-      >
-        <StudentForm
-          editData={selectedStudent}
-          onSuccess={handleStudentSuccess}
-          onCancel={() => setIsModalOpen(false)}
-        />
-      </Modal>
     </div>
+
   );
+
 };
 
 export default StudentsPage;

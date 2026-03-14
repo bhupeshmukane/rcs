@@ -82,8 +82,8 @@ const StudentForm = ({ onSuccess, editData, isRegistration = false }) => {
 
   return (
     <div className="max-w-2xl mx-auto">
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">
+      <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 className="mb-6 text-2xl font-black text-slate-900">
           {isRegistration ? 'Student Registration' : editData ? 'Edit Student' : 'Add New Student'}
         </h2>
 
@@ -97,7 +97,7 @@ const StudentForm = ({ onSuccess, editData, isRegistration = false }) => {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Student ID */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="mb-1 block text-sm font-medium text-slate-700">
               Student ID *
             </label>
             <input
@@ -108,13 +108,13 @@ const StudentForm = ({ onSuccess, editData, isRegistration = false }) => {
               placeholder="e.g., TU4F2222016"
               required
               disabled={!!editData} // Disable editing ID for existing students
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-600"
+              className="w-full rounded-xl border border-slate-300 px-3 py-2 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200 disabled:bg-slate-100 disabled:text-slate-600"
             />
           </div>
 
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="mb-1 block text-sm font-medium text-slate-700">
               Full Name *
             </label>
             <input
@@ -124,13 +124,13 @@ const StudentForm = ({ onSuccess, editData, isRegistration = false }) => {
               onChange={handleChange}
               placeholder="Enter full name"
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-xl border border-slate-300 px-3 py-2 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
             />
           </div>
 
           {/* Email */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="mb-1 block text-sm font-medium text-slate-700">
               Email Address *
             </label>
             <input
@@ -140,13 +140,13 @@ const StudentForm = ({ onSuccess, editData, isRegistration = false }) => {
               onChange={handleChange}
               placeholder="Enter email address"
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-xl border border-slate-300 px-3 py-2 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
             />
           </div>
 
           {/* Date of Birth */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="mb-1 block text-sm font-medium text-slate-700">
               Date of Birth *
             </label>
             <input
@@ -155,13 +155,13 @@ const StudentForm = ({ onSuccess, editData, isRegistration = false }) => {
               value={formData.dob}
               onChange={handleChange}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-xl border border-slate-300 px-3 py-2 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
             />
           </div>
 
           {/* Category */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="mb-1 block text-sm font-medium text-slate-700">
               Category *
             </label>
             <select
@@ -169,7 +169,7 @@ const StudentForm = ({ onSuccess, editData, isRegistration = false }) => {
               value={formData.category}
               onChange={handleChange}
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-xl border border-slate-300 px-3 py-2 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-200"
             >
               <option value="">Select Category</option>
               {categories.map((cat) => (
@@ -183,7 +183,7 @@ const StudentForm = ({ onSuccess, editData, isRegistration = false }) => {
           <Button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-md disabled:opacity-50"
+            className="w-full py-3"
           >
             {loading ? (
               <LoadingSpinner size="sm" text={isRegistration ? 'Registering...' : 'Saving...'} />

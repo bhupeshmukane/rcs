@@ -45,31 +45,27 @@ const Modal = ({
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto">
-      {/* Overlay */}
       <div 
-        className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+        className="fixed inset-0 bg-slate-950/45 backdrop-blur-sm transition-opacity"
         onClick={handleOverlayClick}
       />
-      
-      {/* Modal container */}
+
       <div className="flex items-center justify-center min-h-screen p-4">
-        <div className={`bg-white rounded-lg shadow-xl w-full ${sizeClasses[size]} relative`}>
-          {/* Header */}
+        <div className={`relative w-full rounded-2xl border border-slate-200 bg-white shadow-xl ${sizeClasses[size]}`}>
           {title && (
-            <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">
+            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+              <h3 className="text-lg font-bold text-slate-900">
                 {title}
               </h3>
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 text-xl font-semibold"
+                className="text-xl font-semibold text-slate-400 hover:text-slate-600"
               >
                 ×
               </button>
             </div>
           )}
-          
-          {/* Content */}
+
           <div className="p-6">
             {children}
           </div>

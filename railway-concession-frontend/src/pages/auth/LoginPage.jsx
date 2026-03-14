@@ -5,45 +5,69 @@ import LoginForm from '../../components/forms/LoginForm';
 import LoadingSpinner from '../../components/common/LoadingSpinner';
 
 const LoginPage = () => {
-  const { isAuthenticated, loading } = useAuth();
 
-  // Redirect if already authenticated
+  const { isAuthenticated, loading, role } = useAuth();
+
   if (loading) {
     return <LoadingSpinner />;
   }
 
   if (isAuthenticated) {
-  return role === 'student'
-    ? <Navigate to="/student/dashboard" replace />
-    : <Navigate to="/staff/dashboard" replace />;
-}
+    return role === "student"
+      ? <Navigate to="/student/dashboard" replace />
+      : <Navigate to="/staff/dashboard" replace />;
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-lg w-full space-y-8">
-        {/* Header */}
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
+    <div className="min-h-screen flex bg-slate-100">
+
+      <div className="hidden lg:flex w-1/2 items-center justify-center bg-gradient-to-br from-slate-950 via-blue-950 to-teal-800 p-10 text-white">
+
+        <div className="max-w-md">
+          <p className="text-sm uppercase tracking-[0.2em] text-sky-100">Railway Concession</p>
+
+          <h1 className="mb-6 mt-2 text-4xl font-black tracking-tight">
             Railway Concession System
           </h1>
-          <p className="text-lg text-gray-600">
-            Sign in to access your account
+
+          <p className="mb-6 text-lg text-sky-100">
+            A digital platform for managing railway concession
+            applications for students and staff.
           </p>
+
+          <ul className="space-y-3 text-sm text-sky-100">
+            <li>Online concession applications</li>
+            <li>Real-time application tracking</li>
+            <li>Secure OTP based student login</li>
+            <li>Digital staff approval workflow</li>
+          </ul>
+
         </div>
 
-        {/* Login Form */}
-        <LoginForm />
-
-        {/* Additional Info */}
-        <div className="text-center">
-          <p className="text-sm text-gray-500">
-            For student login: Use your college ID and date of birth
-          </p>
-          <p className="text-sm text-gray-500 mt-1">
-            For staff login: Use your registered email and password
-          </p>
-        </div>
       </div>
+
+      <div className="flex flex-1 items-center justify-center p-6">
+
+        <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
+
+          <div className="mb-6 text-center">
+
+            <h2 className="text-3xl font-black text-slate-900">
+              Welcome Back
+            </h2>
+
+            <p className="mt-2 text-slate-600">
+              Sign in to continue
+            </p>
+
+          </div>
+
+          <LoginForm />
+
+        </div>
+
+      </div>
+
     </div>
   );
 };

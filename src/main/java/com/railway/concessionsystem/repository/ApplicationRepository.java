@@ -4,7 +4,6 @@ import com.railway.concessionsystem.model.Application;
 import com.railway.concessionsystem.model.ApplicationStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -29,6 +28,16 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
             String studentId,
             ApplicationStatus status,
             LocalDate date
+    );
+
+    List<Application> findByStatusAndValidUntilBefore(
+            ApplicationStatus status,
+            LocalDate date
+    );
+
+    List<Application> findByStudent_IdAndConcessionType(
+            String studentId,
+            String concessionType
     );
 
     // ===============================
@@ -60,4 +69,9 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     @Query("SELECT DISTINCT a.student.department FROM Application a WHERE a.student.department IS NOT NULL")
     List<String> findAllDistinctDepartments();
 
+    // ===============================
+    // STAFF/ADMIN QUERIES
+    // ===============================
+
+    
 }

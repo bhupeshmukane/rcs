@@ -13,9 +13,7 @@ api.interceptors.request.use(
   (config) => {
     const user = JSON.parse(localStorage.getItem('user') || '{}');
 
-    if (user && user.id) {
-      config.headers.Authorization = `Bearer ${user.id}`;
-    }
+    
 
     // ✅ IMPORTANT FIX:
     // If data is NOT FormData, set JSON content-type
@@ -32,11 +30,14 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('user');
-      localStorage.removeItem('role');
+    // Only redirect if NOT already on login page
+    if (error.response?.status === 401 &&
+        window.location.pathname !== '/login' &&
+        window.location.pathname !== '/verify-otp') {
+
       window.location.href = '/login';
     }
+
     return Promise.reject(error);
   }
 );

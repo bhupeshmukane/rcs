@@ -8,7 +8,7 @@ const applicationService = {
   getAllApplications: async () => {
     try {
       const response = await api.get(
-        '/applications/staff/applications',
+        '/applications/staff',
         { withCredentials: true }
       );
       return response.data;
@@ -73,11 +73,15 @@ const applicationService = {
   // ===============================
   // STAFF: Update Application Status
   // ===============================
-  updateApplicationStatus: async (id, status) => {
+  updateApplicationStatus: async (id, status, rejectionReason = null) => {
     try {
+      const payload = rejectionReason
+        ? { status, rejectionReason }
+        : { status };
+
       const response = await api.put(
         `/applications/${id}/status`,
-        { status }
+        payload
       );
       return response.data;
     } catch (error) {
@@ -185,6 +189,27 @@ const applicationService = {
       throw new Error(
         error.response?.data?.error ||
         'Failed to fetch caste certificate'
+      );
+    }
+  },
+
+  // ===============================
+  // STAFF: Download Applications CSV
+  // ===============================
+  downloadApplicationsCsv: async () => {
+    try {
+      const response = await api.get(
+        '/applications/staff/reports/applications/csv',
+        {
+          responseType: 'blob',
+          withCredentials: true
+        }
+      );
+      return response.data;
+    } catch (error) {
+      throw new Error(
+        error.response?.data?.error ||
+        'Failed to download applications CSV'
       );
     }
   }

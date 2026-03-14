@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @Entity
 @Table(name = "application")
@@ -27,12 +28,16 @@ public class Application {
     private String routeTo;
 
     private String prevCertificateNo;
+    @Column(name = "current_certificate_no", unique = true)
     private String currentCertificateNo;
 
     private String casteCertificate;
     private String aadharCard;
+    private String otherDocument;
+    private String previousPass;
 
     @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false, length = 20)
     private ApplicationStatus status;
 
     @Enumerated(EnumType.STRING)
@@ -47,7 +52,8 @@ public class Application {
 
     @Column(name = "override_allowed")
     private Boolean overrideAllowed = false;
-
+    
+    @Column(name = "application_date", nullable = false)
     private LocalDateTime applicationDate;
     private LocalDateTime approveDate;
     private LocalDateTime issueDate;
@@ -59,6 +65,12 @@ public class Application {
 
     public Student getStudent() { return student; }
     public void setStudent(Student student) { this.student = student; }
+
+    @Transient
+    @JsonProperty("studentId")
+    public String getStudentId() {
+        return student != null ? student.getId() : null;
+    }
 
     public String getStudentName() { return studentName; }
     public void setStudentName(String studentName) { this.studentName = studentName; }
@@ -86,6 +98,12 @@ public class Application {
 
     public String getAadharCard() { return aadharCard; }
     public void setAadharCard(String aadharCard) { this.aadharCard = aadharCard; }
+
+    public String getOtherDocument() { return otherDocument; }
+    public void setOtherDocument(String otherDocument) { this.otherDocument = otherDocument; }
+
+    public String getPreviousPass() { return previousPass; }
+    public void setPreviousPass(String previousPass) { this.previousPass = previousPass; }
 
     public ApplicationStatus getStatus() { return status; }
     public void setStatus(ApplicationStatus status) { this.status = status; }

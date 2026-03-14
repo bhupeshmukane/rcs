@@ -63,105 +63,133 @@ const ProfilePage = () => {
   if (loading) return <LoadingSpinner text="Loading profile..." />;
   if (error) return <ErrorMessage message={error} />;
 
+  const totalApplications = profile?.applications?.length || 0;
+  const approvedCount = profile?.applications?.filter(app => app.status === 'APPROVED').length || 0;
+  const pendingCount = profile?.applications?.filter(app => app.status === 'PENDING').length || 0;
+  const rejectedCount = profile?.applications?.filter(app => app.status === 'REJECTED').length || 0;
+
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
-        <Button onClick={() => setIsEditModalOpen(true)}>
-          ✏️ Edit Profile
-        </Button>
-      </div>
+    <div className="space-y-8">
+      <section className="relative overflow-hidden rounded-3xl border border-slate-200/60 bg-gradient-to-r from-slate-900 via-blue-900 to-teal-700 p-6 text-white shadow-xl md:p-8">
+        <div className="pointer-events-none absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/20 blur-2xl" />
+        <div className="relative z-10 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="text-sm uppercase tracking-[0.2em] text-sky-100">Student Profile</p>
+            <h1 className="mt-2 text-3xl font-black tracking-tight md:text-4xl">My Profile</h1>
+            <p className="mt-2 max-w-xl text-sm text-sky-100 md:text-base">
+              Keep your details up to date and monitor your application activity from one page.
+            </p>
+          </div>
+          <Button
+            variant="light"
+            className="w-full px-5 py-2.5 md:w-auto"
+            onClick={() => setIsEditModalOpen(true)}
+          >
+            Edit Profile
+          </Button>
+        </div>
+      </section>
 
       {success && <SuccessMessage message={success} onDismiss={() => setSuccess('')} />}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Personal Information */}
-        <Card title="Personal Information" className="h-fit">
+      <section className="grid grid-cols-1 gap-4 md:grid-cols-4 md:gap-6">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Total Applications</p>
+          <p className="mt-3 text-3xl font-black text-amber-500">{totalApplications}</p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Approved</p>
+          <p className="mt-3 text-3xl font-black text-emerald-600">{approvedCount}</p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Pending</p>
+          <p className="mt-3 text-3xl font-black text-amber-600">{pendingCount}</p>
+        </div>
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Rejected</p>
+          <p className="mt-3 text-3xl font-black text-rose-600">{rejectedCount}</p>
+        </div>
+      </section>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <Card title="Personal Information" className="h-fit rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-500">Student ID</p>
-                <p className="font-medium text-gray-900">{profile?.id}</p>
+                <p className="text-sm text-slate-500">Student ID</p>
+                <p className="font-medium text-slate-900">{profile?.id}</p>
               </div>
             </div>
 
             <div>
-              <p className="text-sm text-gray-500">Full Name</p>
-              <p className="font-medium text-gray-900">{profile?.name}</p>
+              <p className="text-sm text-slate-500">Full Name</p>
+              <p className="font-medium text-slate-900">{profile?.name}</p>
             </div>
 
             <div>
-              <p className="text-sm text-gray-500">Email Address</p>
-              <p className="font-medium text-gray-900">{profile?.email}</p>
+              <p className="text-sm text-slate-500">Email Address</p>
+              <p className="font-medium text-slate-900">{profile?.email}</p>
             </div>
 
             <div>
-              <p className="text-sm text-gray-500">Date of Birth</p>
-              <p className="font-medium text-gray-900">{formatDate(profile?.dob)}</p>
+              <p className="text-sm text-slate-500">Date of Birth</p>
+              <p className="font-medium text-slate-900">{formatDate(profile?.dob)}</p>
             </div>
 
             <div>
-              <p className="text-sm text-gray-500">Category</p>
-              <p className="font-medium text-gray-900">{profile?.category || 'Not specified'}</p>
+              <p className="text-sm text-slate-500">Category</p>
+              <p className="font-medium text-slate-900">{profile?.category || 'Not specified'}</p>
             </div>
           </div>
         </Card>
 
-        {/* Quick Statistics */}
-        <Card title="Application Statistics" className="h-fit">
+        <Card title="Application Statistics" className="h-fit rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-blue-50 p-4 rounded-lg text-center">
-                <p className="text-2xl font-bold text-blue-600">{profile?.applications?.length || 0}</p>
-                <p className="text-sm text-gray-600">Total Applications</p>
+            <div className="grid grid-cols-2 gap-4 text-center">
+              <div className="rounded-xl border border-sky-100 bg-sky-50 p-4">
+                <p className="text-2xl font-bold text-amber-500">{totalApplications}</p>
+                <p className="text-sm text-slate-600">Total Applications</p>
               </div>
               
-              <div className="bg-green-50 p-4 rounded-lg text-center">
-                <p className="text-2xl font-bold text-green-600">
-                  {profile?.applications?.filter(app => app.status === 'APPROVED').length || 0}
-                </p>
-                <p className="text-sm text-gray-600">Approved</p>
+              <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-4">
+                <p className="text-2xl font-bold text-emerald-700">{approvedCount}</p>
+                <p className="text-sm text-slate-600">Approved</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-yellow-50 p-4 rounded-lg text-center">
-                <p className="text-2xl font-bold text-yellow-600">
-                  {profile?.applications?.filter(app => app.status === 'PENDING').length || 0}
-                </p>
-                <p className="text-sm text-gray-600">Pending</p>
+            <div className="grid grid-cols-2 gap-4 text-center">
+              <div className="rounded-xl border border-amber-100 bg-amber-50 p-4">
+                <p className="text-2xl font-bold text-amber-700">{pendingCount}</p>
+                <p className="text-sm text-slate-600">Pending</p>
               </div>
               
-              <div className="bg-red-50 p-4 rounded-lg text-center">
-                <p className="text-2xl font-bold text-red-600">
-                  {profile?.applications?.filter(app => app.status === 'REJECTED').length || 0}
-                </p>
-                <p className="text-sm text-gray-600">Rejected</p>
+              <div className="rounded-xl border border-rose-100 bg-rose-50 p-4">
+                <p className="text-2xl font-bold text-rose-700">{rejectedCount}</p>
+                <p className="text-sm text-slate-600">Rejected</p>
               </div>
             </div>
           </div>
         </Card>
       </div>
 
-      {/* Recent Applications Preview */}
       {profile?.applications && profile.applications.length > 0 && (
-        <Card title="Recent Applications">
+        <Card title="Recent Applications" className="rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full text-left text-sm">
+              <thead>
                 <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Route</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Applied Date</th>
+                  <th className="border-b border-slate-200 px-3 py-3 text-xs uppercase tracking-wide text-slate-500">ID</th>
+                  <th className="border-b border-slate-200 px-3 py-3 text-xs uppercase tracking-wide text-slate-500">Route</th>
+                  <th className="border-b border-slate-200 px-3 py-3 text-xs uppercase tracking-wide text-slate-500">Status</th>
+                  <th className="border-b border-slate-200 px-3 py-3 text-xs uppercase tracking-wide text-slate-500">Applied Date</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200">
+              <tbody>
                 {profile.applications.slice(0, 5).map((app) => (
-                  <tr key={app.appId}>
-                    <td className="px-4 py-2 text-sm font-medium text-gray-900">#{app.appId}</td>
-                    <td className="px-4 py-2 text-sm text-gray-900">{app.routeFrom} → {app.routeTo}</td>
-                    <td className="px-4 py-2">
+                  <tr key={app.appId} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
+                    <td className="px-3 py-3 font-medium text-slate-800">#{app.appId}</td>
+                    <td className="px-3 py-3 text-slate-700">{app.routeFrom} {'->'} {app.routeTo}</td>
+                    <td className="px-3 py-3">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                         app.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
                         app.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
@@ -170,7 +198,7 @@ const ProfilePage = () => {
                         {app.status}
                       </span>
                     </td>
-                    <td className="px-4 py-2 text-sm text-gray-900">
+                    <td className="px-3 py-3 text-slate-700">
                       {new Date(app.applicationDate).toLocaleDateString()}
                     </td>
                   </tr>
@@ -180,7 +208,7 @@ const ProfilePage = () => {
           </div>
           {profile.applications.length > 5 && (
             <div className="mt-4 text-center">
-              <Button variant="outline" onClick={() => window.location.href = '/student/applications'}>
+              <Button variant="outline" className="border-slate-400 text-slate-700 hover:bg-slate-100" onClick={() => window.location.href = '/student/applications'}>
                 View All Applications
               </Button>
             </div>
@@ -188,7 +216,6 @@ const ProfilePage = () => {
         </Card>
       )}
 
-      {/* Edit Profile Modal */}
       <Modal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
