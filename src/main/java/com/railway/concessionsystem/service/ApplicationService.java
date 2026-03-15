@@ -110,7 +110,7 @@ public class ApplicationService {
         Application application = new Application();
         application.setStudent(student);
         application.setStudentName(studentName);
-        application.setStudentDob(LocalDate.parse(studentDob));
+        application.setStudentDob(student.getDob());
         application.setRouteFrom(routeFrom);
         application.setRouteTo(routeTo);
         application.setCategory(category);
@@ -142,9 +142,10 @@ public class ApplicationService {
                         "Application submitted by student")
         );
 
-        if (saved.getStudent() != null && saved.getStudent().getEmail() != null) {
+        String submittedEmail = student.getEmail();
+        if (submittedEmail != null && !submittedEmail.isBlank()) {
             emailService.sendGenericEmail(
-                saved.getStudent().getEmail(),
+            submittedEmail,
                 "Railway Concession Application Submitted",
                 "Your concession application has been submitted successfully.\n\n" +
                 "Application ID: " + saved.getAppId() + "\n" +
@@ -179,21 +180,21 @@ public class ApplicationService {
         application.setIssueDate(null);
         application.setValidUntil(null);
 
-        emailService.sendGenericEmail(
-                application.getStudent().getEmail(),
-                "Railway Concession Application Rejected",
-                "Your concession application has been rejected.\n\n" +
-                "Application ID: " + application.getAppId() + "\n" +
-                "Reason: " + (rejectionReason == null || rejectionReason.isBlank() ? "Not specified" : rejectionReason) + "\n\n" +
-                "You may update details and reapply."
+        sendEmailIfAvailable(
+            application,
+            "Railway Concession Application Rejected",
+            "Your concession application has been rejected.\n\n" +
+            "Application ID: " + application.getAppId() + "\n" +
+            "Reason: " + (rejectionReason == null || rejectionReason.isBlank() ? "Not specified" : rejectionReason) + "\n\n" +
+            "You may update details and reapply."
         );
     }
 
     Application saved = applicationRepository.save(application);
 
         if (status == ApplicationStatus.APPROVED) {
-        emailService.sendGenericEmail(
-            saved.getStudent().getEmail(),
+        sendEmailIfAvailable(
+            saved,
             "Railway Concession Application Approved",
             "Your concession application has been approved. " +
             "Certificate will be issued shortly by staff.\n\n" +
@@ -246,13 +247,13 @@ public class ApplicationService {
     Application saved = applicationRepository.save(application);
 
     // ✅ SEND ISSUED EMAIL
-    emailService.sendGenericEmail(
-            application.getStudent().getEmail(),
+        sendEmailIfAvailable(
+            application,
             "Railway Concession Issued",
             "Your concession has been issued.\n\n" +
             "Certificate No: " + certificateNo + "\n" +
             "Valid Until: " + application.getValidUntil()
-    );
+        );
 
     CertificateHistory history = new CertificateHistory(
         certificateNo,
@@ -297,10 +298,11 @@ public List<Application> getApplicationsForMultipleDepartments(List<String> depa
         }
     }
 
-    return applicationRepository.findAll().stream()
-            .filter(app -> app.getStudent() != null && app.getStudent().getDepartment() != null)
-            .filter(app -> normalized.contains(app.getStudent().getDepartment().trim().toUpperCase(Locale.ROOT)))
-            .toList();
+    if (normalized.isEmpty()) {
+        throw new IllegalArgumentException("Department list cannot be empty");
+    }
+
+    return applicationRepository.findByStudentDepartmentInUpper(List.copyOf(normalized));
 }
     // =====================================================
     // ENABLE OVERRIDE
@@ -478,14 +480,32 @@ public List<Application> getApplicationsForMultipleDepartments(List<String> depa
                             "Concession expired automatically")
             );
 
-            emailService.sendGenericEmail(
-                    app.getStudent().getEmail(),
+                sendEmailIfAvailable(
+                    app,
                     "Concession Expired",
                     "Your railway concession with certificate number "
                     + app.getCurrentCertificateNo()
                     + " has expired."
-            );
+                );
         }
     }
+
+            private void sendEmailIfAvailable(Application application,
+                              String subject,
+                              String body) {
+            resolveStudentEmail(application)
+                .ifPresent(email -> emailService.sendGenericEmail(email, subject, body));
+            }
+
+            private Optional<String> resolveStudentEmail(Application application) {
+            String studentId = application.getStudentId();
+            if (studentId == null || studentId.isBlank()) {
+                return Optional.empty();
+            }
+
+            return studentRepository.findById(studentId)
+                .map(Student::getEmail)
+                .filter(email -> email != null && !email.isBlank());
+            }
 }
 

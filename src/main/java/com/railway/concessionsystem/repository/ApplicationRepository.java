@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.repository.query.Param;
 
 @Repository
 public interface ApplicationRepository extends JpaRepository<Application, Long> {
@@ -64,6 +65,9 @@ public interface ApplicationRepository extends JpaRepository<Application, Long> 
     List<Application> findByStudent_Department(String department);
 
     List<Application> findByStudent_DepartmentIn(List<String> departments);
+
+        @Query("SELECT a FROM Application a JOIN a.student s WHERE UPPER(s.department) IN :departments")
+        List<Application> findByStudentDepartmentInUpper(@Param("departments") List<String> departments);
 
     // Distinct departments
     @Query("SELECT DISTINCT a.student.department FROM Application a WHERE a.student.department IS NOT NULL")

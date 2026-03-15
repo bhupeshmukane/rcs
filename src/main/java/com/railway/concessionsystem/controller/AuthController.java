@@ -96,9 +96,20 @@ public ResponseEntity<?> requestOtp(@RequestBody Map<String, String> request) {
 
         Student student = studentRepository.findById(studentId).get();
 
+        Map<String, Object> studentPayload = Map.of(
+            "id", student.getId(),
+            "name", student.getName(),
+            "email", student.getEmail(),
+            "dob", student.getDob(),
+            "department", student.getDepartment(),
+            "year", student.getYear(),
+            "category", student.getCategory(),
+            "isActive", student.getIsActive()
+        );
+
         return ResponseEntity.ok(Map.of(
                 "message", "Login successful",
-                "student", student,
+            "student", studentPayload,
                 "role", "student"
         ));
     }
@@ -158,8 +169,24 @@ public ResponseEntity<?> requestOtp(@RequestBody Map<String, String> request) {
             String studentId = (String) session.getAttribute("studentId");
             Student student = studentRepository.findById(studentId).orElse(null);
 
+            if (student == null) {
+            return ResponseEntity.status(401)
+                .body(Map.of("error", "Not authenticated"));
+            }
+
+            Map<String, Object> studentPayload = Map.of(
+                "id", student.getId(),
+                "name", student.getName(),
+                "email", student.getEmail(),
+                    "dob", student.getDob(),
+                "department", student.getDepartment(),
+                "year", student.getYear(),
+                "category", student.getCategory(),
+                "isActive", student.getIsActive()
+            );
+
             return ResponseEntity.ok(Map.of(
-                    "user", student,
+                "user", studentPayload,
                     "role", "student"
             ));
         }

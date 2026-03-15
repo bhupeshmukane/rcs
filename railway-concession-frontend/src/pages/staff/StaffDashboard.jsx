@@ -188,8 +188,8 @@ const StaffDashboard = () => {
                 <tr key={app.appId} className="border-b border-slate-100 last:border-0 hover:bg-slate-50">
                   <td className="px-3 py-3 font-medium text-slate-800">#{app.appId}</td>
                   <td className="px-3 py-3">
-                    <p className="font-medium text-slate-800">{app.student?.name}</p>
-                    <p className="text-xs text-slate-500">{app.student?.id}</p>
+                    <p className="font-medium text-slate-800">{app.studentName || 'N/A'}</p>
+                    <p className="text-xs text-slate-500">{app.studentId || 'N/A'}</p>
                   </td>
                   <td className="px-3 py-3 text-slate-700">{app.routeFrom} {'->'} {app.routeTo}</td>
                   <td className="px-3 py-3 text-slate-700">{new Date(app.applicationDate).toLocaleDateString()}</td>

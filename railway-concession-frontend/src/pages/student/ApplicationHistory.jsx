@@ -21,28 +21,42 @@ const ApplicationHistory = () => {
   const [selectedApplication, setSelectedApplication] = useState(null);
 
   useEffect(() => {
-    fetchApplications();
-  }, []);
+    if (user?.id) {
+      fetchApplications(true);
+    }
+  }, [user?.id]);
 
   useEffect(() => {
+    if (!user?.id) {
+      return;
+    }
+
     const intervalId = window.setInterval(() => {
-      fetchApplications();
+      if (!isModalOpen) {
+        fetchApplications(false);
+      }
     }, 15000);
 
-    const handleFocus = () => fetchApplications();
+    const handleFocus = () => {
+      if (!isModalOpen) {
+        fetchApplications(false);
+      }
+    };
     window.addEventListener('focus', handleFocus);
 
     return () => {
       window.clearInterval(intervalId);
       window.removeEventListener('focus', handleFocus);
     };
-  }, [user.id]);
+  }, [user?.id, isModalOpen]);
 
-  const fetchApplications = async () => {
+  const fetchApplications = async (showLoader = false) => {
 
     try {
 
-      setLoading(true);
+      if (showLoader) {
+        setLoading(true);
+      }
 
       const data =
         await applicationService.getApplicationsByStudentId(user.id);
@@ -60,7 +74,9 @@ const ApplicationHistory = () => {
 
     } finally {
 
-      setLoading(false);
+      if (showLoader) {
+        setLoading(false);
+      }
 
     }
 

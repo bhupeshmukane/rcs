@@ -3,8 +3,9 @@ package com.railway.concessionsystem.model;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import org.hibernate.proxy.HibernateProxy;
 
 @Entity
 @Table(name = "application")
@@ -17,7 +18,7 @@ public class Application {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "student_id", nullable = false)
-    @JsonBackReference
+    @JsonIgnore
     private Student student;
 
     private String studentName;
@@ -66,10 +67,18 @@ public class Application {
     public Student getStudent() { return student; }
     public void setStudent(Student student) { this.student = student; }
 
-    @Transient
     @JsonProperty("studentId")
     public String getStudentId() {
-        return student != null ? student.getId() : null;
+        if (student == null) {
+            return null;
+        }
+
+        if (student instanceof HibernateProxy proxy) {
+            Object identifier = proxy.getHibernateLazyInitializer().getIdentifier();
+            return identifier != null ? identifier.toString() : null;
+        }
+
+        return student.getId();
     }
 
     public String getStudentName() { return studentName; }

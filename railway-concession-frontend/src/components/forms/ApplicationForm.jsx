@@ -30,6 +30,7 @@ const ApplicationForm = ({ onSuccess, editData }) => {
 
   // Previous pass file state
   const [previousPass, setPreviousPass] = useState(null);
+  const [otherDocument, setOtherDocument] = useState(null);
 
   useEffect(() => {
     if (editData) {
@@ -73,6 +74,10 @@ const ApplicationForm = ({ onSuccess, editData }) => {
 
   const handlePreviousPassChange = (e) => {
     setPreviousPass(e.target.files[0]);
+  };
+
+  const handleOtherDocumentChange = (e) => {
+    setOtherDocument(e.target.files[0]);
   };
 
   const handleSubmit = async (e) => {
@@ -133,6 +138,10 @@ const ApplicationForm = ({ onSuccess, editData }) => {
       // Previous pass is mandatory
       data.append('previousPass', previousPass);
 
+      if (otherDocument) {
+        data.append('otherDocument', otherDocument);
+      }
+
       const response = await applicationService.createApplication(data);
 
       setSuccess('Application submitted successfully!');
@@ -146,6 +155,7 @@ const ApplicationForm = ({ onSuccess, editData }) => {
       setCasteCertificate(null);
       setAadharCard(null);
       setPreviousPass(null);
+      setOtherDocument(null);
 
       if (onSuccess) {
         onSuccess(response);
@@ -280,7 +290,7 @@ const ApplicationForm = ({ onSuccess, editData }) => {
               type="file"
               name="otherDocument"
               accept="image/png, image/jpeg, image/jpg, application/pdf"
-              onChange={handleFileChange}
+              onChange={handleOtherDocumentChange}
               className="w-full rounded-xl border border-slate-300 px-3 py-2"
             />
             <p className="mt-1 text-xs text-slate-500">

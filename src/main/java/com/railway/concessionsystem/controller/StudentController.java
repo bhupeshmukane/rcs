@@ -1,7 +1,9 @@
 package com.railway.concessionsystem.controller;
 
 import com.railway.concessionsystem.model.Student;
+import com.railway.concessionsystem.model.Application;
 import com.railway.concessionsystem.repository.StudentRepository;
+import com.railway.concessionsystem.repository.ApplicationRepository;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -10,6 +12,8 @@ import com.railway.concessionsystem.service.AuditService;
 import java.util.Map;
 
 import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/students")
@@ -22,21 +26,32 @@ public class StudentController {
     @Autowired
     private AuditService auditService;
 
+    @Autowired
+    private ApplicationRepository applicationRepository;
+
     // ==============================
     // GET ALL STUDENTS
     // ==============================
     @GetMapping
-    public List<Student> getAllStudents() {
-        return studentRepository.findAll();
+    public List<Map<String, Object>> getAllStudents() {
+        return studentRepository.findAll().stream()
+                .map(this::toStudentSummary)
+                .collect(Collectors.toList());
     }
 
     // ==============================
     // GET STUDENT BY ID
     // ==============================
     @GetMapping("/{id}")
-    public ResponseEntity<Student> getStudentById(@PathVariable String id) {
+    public ResponseEntity<?> getStudentById(@PathVariable String id) {
         return studentRepository.findById(id)
-                .map(ResponseEntity::ok)
+                .map(student -> {
+                    List<Map<String, Object>> applications = applicationRepository.findByStudent_Id(id).stream()
+                            .map(this::toApplicationSummary)
+                            .collect(Collectors.toList());
+
+                    return ResponseEntity.ok(toStudentWithApplications(student, applications));
+                })
                 .orElse(ResponseEntity.notFound().build());
     }
 
@@ -60,9 +75,9 @@ public class StudentController {
         if (updatedData.getCategory() != null)
             student.setCategory(updatedData.getCategory());
 
-        studentRepository.save(student);
+        Student saved = studentRepository.save(student);
 
-        return ResponseEntity.ok(student);
+        return ResponseEntity.ok(toStudentSummary(saved));
     }
 
     // ==============================
@@ -146,4 +161,54 @@ public ResponseEntity<?> deleteStudentsByYear(@RequestBody Map<String, Object> r
         students.size() + " students from " + department + " year " + year 
     );
 }
+
+    private Map<String, Object> toStudentSummary(Student student) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("id", student.getId());
+        payload.put("name", student.getName());
+        payload.put("dob", student.getDob());
+        payload.put("email", student.getEmail());
+        payload.put("gender", student.getGender());
+        payload.put("department", student.getDepartment());
+        payload.put("year", student.getYear());
+        payload.put("category", student.getCategory());
+        payload.put("isActive", student.getIsActive());
+        payload.put("isDropYear", student.getIsDropYear());
+        payload.put("homeStation", student.getHomeStation());
+        payload.put("collegeStation", student.getCollegeStation());
+        payload.put("phone", student.getPhone());
+        return payload;
+    }
+
+    private Map<String, Object> toStudentWithApplications(Student student,
+                                                           List<Map<String, Object>> applications) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("id", student.getId());
+        payload.put("name", student.getName());
+        payload.put("dob", student.getDob());
+        payload.put("email", student.getEmail());
+        payload.put("gender", student.getGender());
+        payload.put("department", student.getDepartment());
+        payload.put("year", student.getYear());
+        payload.put("category", student.getCategory());
+        payload.put("isActive", student.getIsActive());
+        payload.put("isDropYear", student.getIsDropYear());
+        payload.put("homeStation", student.getHomeStation());
+        payload.put("collegeStation", student.getCollegeStation());
+        payload.put("phone", student.getPhone());
+        payload.put("applications", applications);
+        return payload;
+    }
+
+    private Map<String, Object> toApplicationSummary(Application application) {
+        return Map.of(
+                "appId", application.getAppId(),
+                "status", application.getStatus(),
+                "routeFrom", application.getRouteFrom(),
+                "routeTo", application.getRouteTo(),
+                "applicationDate", application.getApplicationDate(),
+                "validUntil", application.getValidUntil(),
+                "currentCertificateNo", application.getCurrentCertificateNo()
+        );
+    }
 }
